@@ -28,8 +28,8 @@ function ProductCard({ item }: { item: Product }) {
 }
 
 export function Catalog() {
-  const [active, setActive] = useState(categories[0].id);
-  const category = categories.find((c) => c.id === active) ?? categories[0];
+  const [active, setActive] = useState(categories[0]!.id);
+  const category = categories.find((c) => c.id === active) ?? categories[0]!;
 
   return (
     <section id="catalogo" className="mx-auto max-w-6xl px-4 pb-20">
