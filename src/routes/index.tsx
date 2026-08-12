@@ -1,24 +1,122 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { StoreHeader } from "@/components/store/StoreHeader";
+import { Catalog } from "@/components/store/Catalog";
+import banner1 from "@/assets/banner-1.jpg";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Hope Store | Recargas de juegos, streaming y gift cards" },
+      {
+        name: "description",
+        content:
+          "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en Bs.",
+      },
+      { property: "og:title", content: "Hope Store | Centro de recargas" },
+      {
+        property: "og:description",
+        content:
+          "Recargas de juegos, streaming y gift cards con entrega inmediata y proceso 100% automático.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const [showPromo, setShowPromo] = useState(true);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen">
+      <StoreHeader />
+
+      <main>
+        <section className="mx-auto max-w-6xl px-4 pt-6">
+          <div className="overflow-hidden rounded-3xl border border-border glow-ring">
+            <img
+              src={banner1}
+              alt="Paga ahora en USDT con Binance Pay"
+              width={1600}
+              height={608}
+              className="w-full object-cover"
+            />
+          </div>
+
+          {showPromo ? (
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/30 bg-card/80 p-4">
+              <span
+                aria-hidden
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg"
+              >
+                🎁
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-bold">
+                  ✨ ¡Cada recarga participa en el sorteo diario!
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Recarga y podrías ganar diamantes totalmente GRATIS.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar aviso"
+                onClick={() => setShowPromo(false)}
+                className="rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="mx-auto max-w-3xl px-4 py-14 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+            ⚡ Entrega inmediata &amp; verificada
+          </span>
+          <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+            Todo lo que juegas y ves,{" "}
+            <span className="text-gradient-primary">en un solo lugar</span>
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground">
+            Recargas de juegos, suscripciones de streaming y gift cards. Precios para
+            Venezuela, proceso 100% automático.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            <span>
+              ⚡ Entrega <strong className="text-foreground">inmediata</strong>
+            </span>
+            <span aria-hidden>•</span>
+            <span>
+              🔒 Proceso <strong className="text-foreground">seguro</strong>
+            </span>
+            <span aria-hidden>•</span>
+            <span>
+              💎 Mejor <strong className="text-foreground">precio</strong>
+            </span>
+          </div>
+        </section>
+
+        <Catalog />
+      </main>
+
+      <footer className="border-t border-border/60 bg-card/40">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-10 text-center">
+          <p className="text-base font-extrabold">
+            HOPE <span className="text-primary">STORE</span>
+          </p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Centro de recargas digitales. Atención por WhatsApp todos los días, entrega
+            verificada en minutos.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Hope Store. Todos los derechos reservados.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
