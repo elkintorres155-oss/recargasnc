@@ -60,14 +60,12 @@ function Index() {
                 <p className="text-sm font-bold">
                   ✨ ¡Cada recarga participa en el sorteo diario!
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Recarga y podrías ganar diamantes totalmente GRATIS.
-                </p>
+                <p className="text-sm text-muted-foreground">{settings.promoText}</p>
               </div>
               <button
                 type="button"
                 aria-label="Cerrar aviso"
-                onClick={() => setShowPromo(false)}
+                onClick={() => setClosed(true)}
                 className="rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
               >
                 ✕
@@ -85,8 +83,8 @@ function Index() {
             <span className="text-gradient-primary">en un solo lugar</span>
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
-            Recargas de juegos, suscripciones de streaming y gift cards. Precios para
-            Venezuela, proceso 100% automático.
+            Recargas de juegos, suscripciones de streaming y gift cards. Precios en
+            córdobas (C$) para Nicaragua, atención inmediata por WhatsApp.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <span>
@@ -109,14 +107,24 @@ function Index() {
       <footer className="border-t border-border/60 bg-card/40">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-10 text-center">
           <p className="text-base font-extrabold">
-            HOPE <span className="text-primary">STORE</span>
+            {settings.storeName.split(" ")[0]}{" "}
+            <span className="text-primary">
+              {settings.storeName.split(" ").slice(1).join(" ")}
+            </span>
           </p>
           <p className="max-w-md text-sm text-muted-foreground">
             Centro de recargas digitales. Atención por WhatsApp todos los días, entrega
-            verificada en minutos.
+            verificada en minutos. Precios en córdobas (C$).
           </p>
+          <Link
+            to="/admin"
+            className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            🔐 Panel de administración
+          </Link>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Hope Store. Todos los derechos reservados.
+            © {new Date().getFullYear()} {settings.storeName}. Todos los derechos
+            reservados.
           </p>
         </div>
       </footer>
