@@ -6,10 +6,10 @@ export function StoreHeader() {
   const { settings } = useStore();
   const [open, setOpen] = useState(false);
 
-  const links = [
-    { label: "Inicio", to: "/" as const, hash: undefined },
-    { label: "Catálogo", to: "/" as const, hash: "catalogo" },
-    { label: "Admin", to: "/admin" as const, hash: undefined },
+  const links: Array<{ label: string; to: "/" | "/admin"; hash?: string }> = [
+    { label: "Inicio", to: "/" },
+    { label: "Catálogo", to: "/", hash: "catalogo" },
+    { label: "Admin", to: "/admin" },
   ];
 
   return (
@@ -35,7 +35,7 @@ export function StoreHeader() {
             <Link
               key={l.label}
               to={l.to}
-              hash={l.hash}
+              {...(l.hash ? { hash: l.hash } : {})}
               className="rounded-full px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
               {l.label}
@@ -63,7 +63,7 @@ export function StoreHeader() {
               <Link
                 key={l.label}
                 to={l.to}
-                hash={l.hash}
+                {...(l.hash ? { hash: l.hash } : {})}
                 onClick={() => setOpen(false)}
                 className="rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
