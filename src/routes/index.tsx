@@ -1,23 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { Catalog } from "@/components/store/Catalog";
+import { useStore } from "@/lib/store-state";
 import banner1 from "@/assets/banner-1.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hope Store | Recargas de juegos, streaming y gift cards" },
+      { title: "Recargas | Recargas de juegos, streaming y gift cards" },
       {
         name: "description",
         content:
-          "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en Bs.",
+          "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en córdobas (C$).",
       },
-      { property: "og:title", content: "Hope Store | Centro de recargas" },
+      { property: "og:title", content: "Recargas | Centro de recargas" },
       {
         property: "og:description",
         content:
-          "Recargas de juegos, streaming y gift cards con entrega inmediata y proceso 100% automático.",
+          "Recargas de juegos, streaming y gift cards con entrega inmediata y precios en córdobas.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -27,7 +28,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [showPromo, setShowPromo] = useState(true);
+  const { settings } = useStore();
+  const [closed, setClosed] = useState(false);
+  const showPromo = settings.showPromo && !closed;
 
   return (
     <div className="min-h-screen">
