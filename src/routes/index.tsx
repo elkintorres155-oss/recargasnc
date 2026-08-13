@@ -14,11 +14,11 @@ export const Route = createFileRoute("/")({
         content:
           "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en córdobas (C$).",
       },
-      { property: "og:title", content: "Recargas | Centro de recargas" },
+      { property: "og:title", content: "Recargas | Recargas de juegos, streaming y gift cards" },
       {
         property: "og:description",
         content:
-          "Recargas de juegos, streaming y gift cards con entrega inmediata y precios en córdobas.",
+          "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en córdobas (C$).",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
