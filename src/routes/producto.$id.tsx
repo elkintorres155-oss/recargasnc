@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { findProduct } from "@/components/store/data";
@@ -22,36 +22,53 @@ export const Route = createFileRoute("/producto/$id")({
       ],
     };
   },
-  loader: ({ params }) => {
-    if (!findProduct(params.id)) throw notFound();
-    return null;
-  },
   component: ProductPage,
 });
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const { settings, priceOf } = useStore();
-  const base = findProduct(id)!;
-  const packs = base.packs.map((k) => ({ ...k, price: priceOf(base.id, k.id, k.price) }));
+  const { settings, findItem, banks } = useStore();
+  const base = findItem(id);
 
-  const [packId, setPackId] = useState(packs[0]!.id);
+  const activeBanks = banks.filter((b) => b.enabled);
+  const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
-  const [method, setMethod] = useState("Transferencia bancaria");
+  const [bankId, setBankId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const pack = packs.find((p) => p.id === packId)!;
-  const methods = ["Transferencia bancaria", "Tigo Money", "BAC / Efectivo", "USDT (Binance Pay)"];
+  if (!base) {
+    return (
+      <div className="min-h-screen">
+        <StoreHeader />
+        <main className="mx-auto max-w-3xl px-4 py-20 text-center">
+          <h1 className="text-2xl font-extrabold">Producto no disponible</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Puede que haya sido eliminado desde el panel de administración.
+          </p>
+          <Link to="/" className="mt-6 inline-block text-sm font-bold text-primary">
+            ← Volver al catálogo
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
+  const bank = activeBanks.find((b) => b.id === bankId) ?? activeBanks[0];
 
   const order = () => {
     if (base.needsId && !playerId.trim()) {
       setError("Ingresa tu ID de jugador para continuar.");
       return;
     }
+    if (!pack) {
+      setError("Este producto aún no tiene paquetes configurados.");
+      return;
+    }
     setError("");
     const msg = `Hola ${settings.storeName}! Quiero comprar:%0A• Producto: ${base.name}%0A• Paquete: ${pack.label}%0A• Precio: ${formatC(pack.price)}${
       base.needsId ? `%0A• ID de jugador: ${playerId}` : ""
-    }%0A• Pago: ${method}`;
+    }${bank ? `%0A• Pago: ${bank.name}${bank.account ? ` (${bank.account})` : ""}${bank.holder ? ` - ${bank.holder}` : ""}` : ""}`;
     window.open(`https://wa.me/${settings.whatsapp}?text=${msg}`, "_blank");
   };
 
@@ -87,13 +104,13 @@ function ProductPage() {
               1. Elige tu paquete
             </h2>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {packs.map((p) => (
+              {base.packs.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => setPackId(p.id)}
                   className={`rounded-2xl border p-3 text-left transition-colors ${
-                    p.id === packId
+                    p.id === pack?.id
                       ? "border-primary bg-primary/10"
                       : "border-border bg-card/70 hover:border-primary/50"
                   }`}
@@ -124,28 +141,47 @@ function ProductPage() {
               {base.needsId ? "3." : "2."} Método de pago
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
-              {methods.map((m) => (
+              {activeBanks.map((b) => (
                 <button
-                  key={m}
+                  key={b.id}
                   type="button"
-                  onClick={() => setMethod(m)}
+                  onClick={() => setBankId(b.id)}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                    m === method
+                    b.id === bank?.id
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-card/70 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {m}
+                  {b.name}
                 </button>
               ))}
             </div>
+
+            {bank ? (
+              <div className="mt-3 rounded-2xl border border-border bg-card/70 p-4 text-sm">
+                <p className="font-bold">{bank.name}</p>
+                {bank.account ? (
+                  <p className="mt-1 text-muted-foreground">
+                    Cuenta: <span className="font-semibold text-foreground">{bank.account}</span>
+                  </p>
+                ) : null}
+                {bank.holder ? (
+                  <p className="text-muted-foreground">
+                    Titular: <span className="font-semibold text-foreground">{bank.holder}</span>
+                  </p>
+                ) : null}
+                {bank.note ? <p className="text-xs text-muted-foreground">{bank.note}</p> : null}
+              </div>
+            ) : null}
 
             {error ? <p className="mt-4 text-sm font-semibold text-destructive">{error}</p> : null}
 
             <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/70 p-4">
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Total a pagar</p>
-                <p className="text-2xl font-extrabold text-primary">{formatC(pack.price)}</p>
+                <p className="text-2xl font-extrabold text-primary">
+                  {pack ? formatC(pack.price) : "—"}
+                </p>
               </div>
               <button
                 type="button"
