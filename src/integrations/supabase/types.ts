@@ -14,16 +14,327 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_status_history: {
+        Row: {
+          actor: string
+          created_at: string
+          id: string
+          note: string
+          order_id: string
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          actor?: string
+          created_at?: string
+          id?: string
+          note?: string
+          order_id: string
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          id?: string
+          note?: string
+          order_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount_nio: number
+          cost_nio: number
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          order_code: string
+          pack_id: string
+          pack_label: string
+          payment_method_code: string | null
+          player_id: string
+          product_id: string
+          product_name: string
+          profit_nio: number | null
+          provider: string
+          provider_order_id: string | null
+          provider_response: Json | null
+          status: Database["public"]["Enums"]["order_status"]
+          status_reason: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_nio: number
+          cost_nio?: number
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          order_code?: string
+          pack_id?: string
+          pack_label?: string
+          payment_method_code?: string | null
+          player_id?: string
+          product_id: string
+          product_name: string
+          profit_nio?: number | null
+          provider?: string
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          status?: Database["public"]["Enums"]["order_status"]
+          status_reason?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_nio?: number
+          cost_nio?: number
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          order_code?: string
+          pack_id?: string
+          pack_label?: string
+          payment_method_code?: string | null
+          player_id?: string
+          product_id?: string
+          product_name?: string
+          profit_nio?: number | null
+          provider?: string
+          provider_order_id?: string | null
+          provider_response?: Json | null
+          status?: Database["public"]["Enums"]["order_status"]
+          status_reason?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          account_number: string
+          code: string
+          created_at: string
+          enabled: boolean
+          holder: string
+          id: string
+          name: string
+          note: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string
+          code: string
+          created_at?: string
+          enabled?: boolean
+          holder?: string
+          id?: string
+          name: string
+          note?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          code?: string
+          created_at?: string
+          enabled?: boolean
+          holder?: string
+          id?: string
+          name?: string
+          note?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_receipts: {
+        Row: {
+          ai_raw: Json | null
+          ai_reason: string
+          ai_verdict: string
+          confidence: number | null
+          created_at: string
+          declared_amount_nio: number | null
+          detected_amount_nio: number | null
+          detected_bank: string | null
+          detected_date: string | null
+          detected_reference: string | null
+          id: string
+          order_id: string
+          storage_path: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_raw?: Json | null
+          ai_reason?: string
+          ai_verdict?: string
+          confidence?: number | null
+          created_at?: string
+          declared_amount_nio?: number | null
+          detected_amount_nio?: number | null
+          detected_bank?: string | null
+          detected_date?: string | null
+          detected_reference?: string | null
+          id?: string
+          order_id: string
+          storage_path: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_raw?: Json | null
+          ai_reason?: string
+          ai_verdict?: string
+          confidence?: number | null
+          created_at?: string
+          declared_amount_nio?: number | null
+          detected_amount_nio?: number | null
+          detected_bank?: string | null
+          detected_date?: string | null
+          detected_reference?: string | null
+          id?: string
+          order_id?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          order_id: string | null
+          payload: Json
+          processed: boolean
+          provider: string
+          provider_order_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          payload?: Json
+          processed?: boolean
+          provider?: string
+          provider_order_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          payload?: Json
+          processed?: boolean
+          provider?: string
+          provider_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      order_status:
+        | "pending_payment"
+        | "receipt_review"
+        | "payment_rejected"
+        | "payment_approved"
+        | "provider_processing"
+        | "completed"
+        | "failed"
+        | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +461,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      order_status: [
+        "pending_payment",
+        "receipt_review",
+        "payment_rejected",
+        "payment_approved",
+        "provider_processing",
+        "completed",
+        "failed",
+        "refunded",
+      ],
+    },
   },
 } as const
