@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -66,10 +65,6 @@ function AuthPage() {
     if (data.session) navigate({ to: "/mis-pedidos" });
   };
 
-  const google = async () => {
-    await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-  };
-
   return (
     <div className="min-h-screen">
       <StoreHeader />
@@ -82,16 +77,6 @@ function AuthPage() {
         </p>
 
         <div className="mt-6 space-y-4 rounded-3xl border border-border bg-card/70 p-5">
-          <button
-            type="button"
-            onClick={google}
-            className="w-full rounded-full border border-border px-4 py-3 text-sm font-bold hover:border-primary"
-          >
-            Continuar con Google
-          </button>
-
-          <div className="text-center text-xs text-muted-foreground">o con tu correo</div>
-
           <label className="block text-sm font-semibold">
             Correo
             <input
