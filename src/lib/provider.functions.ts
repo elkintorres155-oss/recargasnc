@@ -13,7 +13,7 @@ export const listProviderProducts = createServerFn({ method: 'GET' })
 
     const { signedGet } = await import('./flashtopup.server');
     const res = await signedGet('/products');
-    return { ok: res.ok, status: res.status, body: res.body };
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
   });
 
 /** Servicios/denominaciones de un producto (solo administradores). */
@@ -29,5 +29,5 @@ export const listProviderServices = createServerFn({ method: 'GET' })
 
     const { signedGet } = await import('./flashtopup.server');
     const res = await signedGet('/services', { product_id: data.productId });
-    return { ok: res.ok, status: res.status, body: res.body };
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
   });
