@@ -103,28 +103,65 @@ export function judgeReceipt(analysis: ReceiptAnalysis, expected: number): Verdi
 }
 
 /**
- * Despacho al proveedor de recargas (FlashTopUp u otro).
- * Todavía NO hay credenciales ni endpoints reales: la orden queda aprobada
- * y en espera de procesamiento hasta configurar el proveedor.
+ * Despacho al proveedor de recargas (FlashTopUp, reseller v2, firma HMAC-SHA256).
+ * Las credenciales ya están guardadas como Secrets. Falta que el proveedor
+ * confirme la ruta exacta del endpoint de recarga (TOPUP_PROVIDER_ORDER_PATH)
+ * y el código de producto (SKU) de cada paquete; mientras tanto la orden queda
+ * aprobada y en espera de procesamiento manual.
  */
-export async function dispatchToProvider(_input: {
+export async function dispatchToProvider(input: {
   orderId: string;
   productId: string;
   packId: string;
   playerId: string;
 }): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
-  const apiKey = process.env['TOPUP_PROVIDER_API_KEY'];
-  const baseUrl = process.env['TOPUP_PROVIDER_BASE_URL'];
-  if (!apiKey || !baseUrl) {
+  const { getCredentials, signedRequest } = await import('./flashtopup.server');
+  const creds = getCredentials();
+  const orderPath = process.env['TOPUP_PROVIDER_ORDER_PATH'];
+
+  if (!creds) {
     return {
       dispatched: false,
       providerOrderId: null,
       message: 'Proveedor de recargas aún no configurado: la recarga se procesará manualmente.',
     };
   }
-  return {
-    dispatched: false,
-    providerOrderId: null,
-    message: 'Proveedor configurado pero falta definir el endpoint de recarga.',
-  };
+  if (!orderPath) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message:
+        'Credenciales del proveedor listas; falta el endpoint de recarga y el código de producto. Se procesará manualmente.',
+    };
+  }
+
+  try {
+    const res = await signedRequest(orderPath, {
+      reference: input.orderId,
+      product_code: input.packId || input.productId,
+      target: input.playerId,
+    });
+    const body = res.body as { order_id?: string; data?: { order_id?: string }; message?: string };
+    const providerOrderId = body?.order_id ?? body?.data?.order_id ?? null;
+    if (!res.ok) {
+      return {
+        dispatched: false,
+        providerOrderId: null,
+        message: `El proveedor rechazó la recarga (${res.status}). Se procesará manualmente.`,
+      };
+    }
+    return {
+      dispatched: true,
+      providerOrderId,
+      message: 'Recarga enviada al proveedor.',
+    };
+  } catch (e) {
+    console.error('[flashtopup]', e);
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message: 'No se pudo contactar al proveedor; se procesará manualmente.',
+    };
+  }
 }
+
