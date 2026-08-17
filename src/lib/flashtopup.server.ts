@@ -27,6 +27,48 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     .join('');
 }
 
+/** GET firmado (cuerpo vacío en la firma canónica). */
+export async function signedGet(
+  path: string,
+  query?: Record<string, string | number | undefined>,
+): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const creds = getCredentials();
+  if (!creds) throw new Error('Credenciales del proveedor no configuradas');
+
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const signature = await hmacSha256Hex(
+    creds.apiKey,
+    `${creds.apiId}${timestamp}${nonce}`,
+  );
+
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(query ?? {})) {
+    if (v !== undefined && v !== '') qs.set(k, String(v));
+  }
+  const url = `${creds.baseUrl}${path}${qs.toString() ? `?${qs}` : ''}`;
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'X-FT-API-ID': creds.apiId,
+      'X-FT-TIMESTAMP': timestamp,
+      'X-FT-NONCE': nonce,
+      'X-FT-SIGNATURE': signature,
+    },
+  });
+
+  const text = await res.text();
+  let parsed: unknown = text;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    /* respuesta no JSON */
+  }
+  return { ok: res.ok, status: res.status, body: parsed };
+}
+
 /**
  * Firma canónica FlashTopUp:
  *   apiId + timestamp + nonce + cuerpo JSON  →  HMAC-SHA256 (hex) con la API key.
@@ -36,6 +78,7 @@ export async function signedRequest(
   path: string,
   payload: Record<string, unknown>,
 ): Promise<{ ok: boolean; status: number; body: unknown }> {
+
   const creds = getCredentials();
   if (!creds) throw new Error('Credenciales del proveedor no configuradas');
 
