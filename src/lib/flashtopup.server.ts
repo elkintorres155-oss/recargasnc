@@ -27,7 +27,11 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     .join('');
 }
 
-/** Firma canónica: api_id + timestamp + cuerpo JSON, con HMAC-SHA256 sobre la API key. */
+/**
+ * Firma canónica FlashTopUp:
+ *   apiId + timestamp + nonce + cuerpo JSON  →  HMAC-SHA256 (hex) con la API key.
+ * Headers: X-FT-API-ID, X-FT-TIMESTAMP, X-FT-NONCE, X-FT-SIGNATURE.
+ */
 export async function signedRequest(
   path: string,
   payload: Record<string, unknown>,
@@ -36,16 +40,22 @@ export async function signedRequest(
   if (!creds) throw new Error('Credenciales del proveedor no configuradas');
 
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const body = JSON.stringify({ ...payload, api_id: creds.apiId, timestamp });
-  const signature = await hmacSha256Hex(creds.apiKey, `${creds.apiId}${timestamp}${body}`);
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const body = JSON.stringify(payload);
+  const signature = await hmacSha256Hex(
+    creds.apiKey,
+    `${creds.apiId}${timestamp}${nonce}${body}`,
+  );
 
   const res = await fetch(`${creds.baseUrl}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Id': creds.apiId,
-      'X-Timestamp': timestamp,
-      'X-Signature': signature,
+      Accept: 'application/json',
+      'X-FT-API-ID': creds.apiId,
+      'X-FT-TIMESTAMP': timestamp,
+      'X-FT-NONCE': nonce,
+      'X-FT-SIGNATURE': signature,
     },
     body,
   });
