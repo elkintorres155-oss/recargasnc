@@ -28,6 +28,16 @@ export const Route = createFileRoute("/admin")({
 
 const PIN = "1234";
 
+const TABS = [
+  { id: "general", label: "⚙️ General" },
+  { id: "pagos", label: "🏦 Métodos de pago" },
+  { id: "catalogo", label: "🎮 Catálogo y precios" },
+  { id: "saldos", label: "💰 Recargas de saldo" },
+  { id: "proveedor", label: "🔌 Proveedor" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
 const inputCls =
   "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
