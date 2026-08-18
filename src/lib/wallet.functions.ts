@@ -226,7 +226,6 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
       _amount: Number(req.amount_nio),
       _description: `Recarga ${req.method_name}`,
       _reference: req.reference ?? '',
-      _order_id: null,
       _topup_request_id: req.id,
       _created_by: context.userId,
     });
@@ -288,7 +287,7 @@ export const adminUserTransactions = createServerFn({ method: 'POST' })
 
 const adjustSchema = z.object({
   userId: z.string().uuid(),
-  amountNio: z.number().refine((n) => n !== 0, 'El monto no puede ser cero').max(500000).min(-500000),
+  amountNio: z.number().min(-500000).max(500000).refine((n) => n !== 0, 'El monto no puede ser cero'),
   reason: z.string().min(3, 'Escribe el motivo del ajuste').max(300),
   type: z.enum(['adjustment', 'bonus', 'refund']).default('adjustment'),
 });
@@ -306,8 +305,6 @@ export const adminAdjustBalance = createServerFn({ method: 'POST' })
       _amount: data.amountNio,
       _description: `${data.type === 'bonus' ? 'Bonificación' : data.type === 'refund' ? 'Reembolso' : 'Ajuste manual'}: ${data.reason}`,
       _reference: `admin:${context.userId}`,
-      _order_id: null,
-      _topup_request_id: null,
       _created_by: context.userId,
     });
     if (error) throw new Error(error.message);
