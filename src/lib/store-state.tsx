@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getStoreSettings, saveStoreSettings } from "@/lib/settings.functions";
 import { categories as baseCategories, type Category, type Product } from "@/components/store/data";
 
 export type Bank = {
