@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { getMyWallet, getMyTransactions, getMyTopups } from "@/lib/wallet.functions";
+import { useSessionState } from "@/hooks/use-session";
 import { formatC } from "@/lib/store-state";
 
 export const Route = createFileRoute("/saldo")({
@@ -47,11 +48,14 @@ function WalletPage() {
   const txs = useServerFn(getMyTransactions);
   const topups = useServerFn(getMyTopups);
 
-  const w = useQuery({ queryKey: ["wallet"], queryFn: () => wallet(), retry: false });
-  const t = useQuery({ queryKey: ["wallet-tx"], queryFn: () => txs(), retry: false });
-  const r = useQuery({ queryKey: ["my-topups"], queryFn: () => topups(), retry: false });
+  const session = useSessionState();
+  const authed = session === "signed-in";
 
-  if (w.error) {
+  const w = useQuery({ queryKey: ["wallet"], queryFn: () => wallet(), retry: false, enabled: authed });
+  const t = useQuery({ queryKey: ["wallet-tx"], queryFn: () => txs(), retry: false, enabled: authed });
+  const r = useQuery({ queryKey: ["my-topups"], queryFn: () => topups(), retry: false, enabled: authed });
+
+  if (session === "signed-out" || w.error) {
     return (
       <div className="min-h-screen">
         <StoreHeader />
