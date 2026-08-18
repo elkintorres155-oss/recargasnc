@@ -107,7 +107,7 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
 
 
 function AdminPage() {
-  const { settings, setSettings, categories } = useStore();
+  const { settings, setSettings, categories, saving, saveError } = useStore();
   const [pin, setPin] = useState("");
   const [ok, setOk] = useState(false);
   const [cat, setCat] = useState(0);
