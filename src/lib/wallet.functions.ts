@@ -121,6 +121,26 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       .select('id, status, amount_nio')
       .single();
     if (error) throw new Error(error.message);
+
+    const { notifyAdminTelegram } = await import('@/lib/telegram.server');
+    const { data: prof } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+    await notifyAdminTelegram(
+      [
+        '💰 <b>Nueva solicitud de recarga de saldo</b>',
+        `Cliente: ${prof?.full_name || prof?.email || userId}`,
+        `Monto: C$ ${data.amountNio}`,
+        `Método: ${data.methodName || data.method.toUpperCase()}`,
+        `Referencia: ${data.reference.trim() || '—'}`,
+        `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
+        '',
+        'Revísala en el panel → Recargas de saldo.',
+      ].join('\n'),
+    );
+
     return row;
   });
 
