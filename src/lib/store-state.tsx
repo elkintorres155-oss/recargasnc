@@ -74,17 +74,52 @@ type Ctx = {
 
 const StoreContext = createContext<Ctx | null>(null);
 
+const baseImages = new Map(
+  baseCategories.flatMap((c) => c.items).map((p) => [p.id, p.image] as const),
+);
+const fallbackImage = baseCategories[0]!.items[0]!.image;
+
+/** Las URLs `/assets/archivo-HASH.jpg` dejan de existir en cada build: se reemplazan. */
+function fixImages(catalog: Category[]): Category[] {
+  return catalog.map((c) => ({
+    ...c,
+    items: c.items.map((item) =>
+      item.image?.startsWith("/assets/")
+        ? { ...item, image: baseImages.get(item.id) ?? fallbackImage }
+        : item,
+    ),
+  }));
+}
+
 function merge(parsed: Partial<StoreSettings>): StoreSettings {
   return {
     ...defaultSettings,
     ...parsed,
     banks: parsed.banks?.length ? parsed.banks : defaultBanks,
-    catalog: parsed.catalog?.length ? parsed.catalog : baseCategories,
+    catalog: parsed.catalog?.length ? fixImages(parsed.catalog) : baseCategories,
   };
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettingsState] = useState<StoreSettings>(defaultSettings);
+function parseJson(json: string | null | undefined): StoreSettings | null {
+  if (!json) return null;
+  try {
+    return merge(JSON.parse(json) as Partial<StoreSettings>);
+  } catch {
+    return null;
+  }
+}
+
+export function StoreProvider({
+  children,
+  initialJson,
+}: {
+  children: ReactNode;
+  /** Configuración oficial cargada en el servidor (evita el parpadeo con datos por defecto). */
+  initialJson?: string | null;
+}) {
+  const [settings, setSettingsState] = useState<StoreSettings>(
+    () => parseJson(initialJson) ?? defaultSettings,
+  );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const loadSettings = useServerFn(getStoreSettings);
@@ -92,11 +127,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // 1) caché local inmediata, 2) versión oficial desde la base de datos (misma para todos)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setSettingsState(merge(JSON.parse(raw) as Partial<StoreSettings>));
-    } catch {
-      /* ignore */
+    if (!initialJson) {
+      try {
+        const raw = localStorage.getItem(KEY);
+        const cached = parseJson(raw);
+        if (cached) setSettingsState(cached);
+      } catch {
+        /* ignore */
+      }
     }
     loadSettings()
       .then((res) => {
