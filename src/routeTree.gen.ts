@@ -17,6 +17,7 @@ import { Route as RecargarSaldoRouteImport } from './routes/recargar-saldo'
 import { Route as SaldoRouteImport } from './routes/saldo'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
 import { Route as ApiPublicIpRouteImport } from './routes/api/public/ip'
+import { Route as ApiPublicIpWatchRouteImport } from './routes/api/public/ip-watch'
 import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicWebhooksBinanceRouteImport } from './routes/api/public/webhooks/binance'
@@ -61,6 +62,11 @@ const ApiPublicIpRoute = ApiPublicIpRouteImport.update({
   path: '/api/public/ip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIpWatchRoute = ApiPublicIpWatchRouteImport.update({
+  id: '/api/public/ip-watch',
+  path: '/api/public/ip-watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
   id: '/api/public/img/$',
   path: '/api/public/img/$',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/ip-watch': typeof ApiPublicIpWatchRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/ip-watch': typeof ApiPublicIpWatchRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/ip-watch': typeof ApiPublicIpWatchRoute
   '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/ip-watch'
     | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/ip-watch'
     | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/ip-watch'
     | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   SaldoRoute: typeof SaldoRoute
   ProductoIdRoute: typeof ProductoIdRoute
   ApiPublicIpRoute: typeof ApiPublicIpRoute
+  ApiPublicIpWatchRoute: typeof ApiPublicIpWatchRoute
   ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicWebhooksBinanceRoute: typeof ApiPublicWebhooksBinanceRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ip-watch': {
+      id: '/api/public/ip-watch'
+      path: '/api/public/ip-watch'
+      fullPath: '/api/public/ip-watch'
+      preLoaderRoute: typeof ApiPublicIpWatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/img/$': {
       id: '/api/public/img/$'
       path: '/api/public/img/$'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   SaldoRoute: SaldoRoute,
   ProductoIdRoute: ProductoIdRoute,
   ApiPublicIpRoute: ApiPublicIpRoute,
+  ApiPublicIpWatchRoute: ApiPublicIpWatchRoute,
   ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicWebhooksBinanceRoute: ApiPublicWebhooksBinanceRoute,
