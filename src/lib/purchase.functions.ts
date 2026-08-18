@@ -7,6 +7,7 @@ const purchaseSchema = z.object({
   productName: z.string().min(1).max(120),
   packId: z.string().max(80).default(''),
   packLabel: z.string().max(120).default(''),
+  packSku: z.string().max(120).default(''),
   playerId: z.string().max(80).default(''),
   amountNio: z.number().positive().max(500000),
 });
@@ -90,7 +91,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     const dispatch = await dispatchToProvider({
       orderId: order.id,
       productId: data.productId,
-      packId: data.packId,
+      packId: data.packSku || data.packId,
       playerId: data.playerId,
     });
 

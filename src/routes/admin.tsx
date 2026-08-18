@@ -414,7 +414,8 @@ function AdminPage() {
                             tag: "Recarga",
                             image: current.items[0]?.image ?? "",
                             needsId: true,
-                            packs: [{ id: "paquete-1", label: "Paquete 1", price: 100 }],
+                            providerProductId: "",
+                            packs: [{ id: "paquete-1", label: "Paquete 1", price: 100, sku: "" }],
                           },
                         ],
                       });
@@ -490,12 +491,25 @@ function AdminPage() {
                       </label>
                     </div>
 
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <label className="text-xs">
+                        <span className="text-muted-foreground">ID del producto en proveedor</span>
+                        <input
+                          value={p.providerProductId ?? ""}
+                          onChange={(e) => patchProduct(cat, pi, { providerProductId: e.target.value })}
+                          placeholder="ej. freefire"
+                          className={inputCls}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
                       {p.packs.map((k, ki) => (
                         <div key={k.id} className="rounded-xl border border-border/60 p-2">
                           <input
                             value={k.label}
                             onChange={(e) => patchPack(cat, pi, ki, { label: e.target.value })}
+                            placeholder="Nombre"
                             className={inputCls}
                           />
                           <input
@@ -505,6 +519,13 @@ function AdminPage() {
                             onChange={(e) =>
                               patchPack(cat, pi, ki, { price: Number(e.target.value) })
                             }
+                            placeholder="Precio"
+                            className={inputCls}
+                          />
+                          <input
+                            value={k.sku ?? ""}
+                            onChange={(e) => patchPack(cat, pi, ki, { sku: e.target.value })}
+                            placeholder="SKU proveedor"
                             className={inputCls}
                           />
                           <button
@@ -539,6 +560,7 @@ function AdminPage() {
                                   id: slugify(`paquete-${p.packs.length + 1}-${Date.now()}`),
                                   label: `Paquete ${p.packs.length + 1}`,
                                   price: 100,
+                                  sku: "",
                                 },
                               ],
                             })

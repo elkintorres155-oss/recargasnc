@@ -9,6 +9,7 @@ export type Pack = {
   id: string;
   label: string;
   price: number; // córdobas (NIO)
+  sku?: string; // código/SKU del proveedor (ej. FlashTopUp)
 };
 
 export type Product = {
@@ -18,6 +19,7 @@ export type Product = {
   image: string;
   hot?: boolean;
   needsId?: boolean;
+  providerProductId?: string; // ID del producto en el proveedor (ej. freefire)
   packs: Pack[];
 };
 

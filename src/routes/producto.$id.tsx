@@ -98,6 +98,7 @@ function ProductPage() {
           productName: base.name,
           packId: pack.id,
           packLabel: pack.label,
+          packSku: pack.sku ?? "",
           playerId: playerId.trim(),
           amountNio: pack.price,
         },
