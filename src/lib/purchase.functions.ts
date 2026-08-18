@@ -111,35 +111,44 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       };
     }
 
-    // El proveedor no está disponible / rechazó: la orden queda aprobada para
-    // procesamiento manual solamente si el mensaje indica configuración pendiente.
-    const providerFailed = dispatch.message.includes('rechazó') || dispatch.message.includes('contactar');
-    if (providerFailed) {
-      await supabaseAdmin.rpc('apply_wallet_transaction', {
-        _user_id: userId,
-        _type: 'refund',
-        _amount: data.amountNio,
-        _description: `Reembolso automático · ${data.productName}`,
-        _reference: order.order_code,
-        _order_id: order.id,
-        _created_by: userId,
-      });
+    // El proveedor no procesó la recarga (rechazo, error, o configuración pendiente):
+    // siempre devolvemos el saldo al cliente de forma automática.
+    const { error: refundError } = await supabaseAdmin.rpc('apply_wallet_transaction', {
+      _user_id: userId,
+      _type: 'refund',
+      _amount: data.amountNio,
+      _description: `Reembolso automático · ${data.productName}`,
+      _reference: order.order_code,
+      _order_id: order.id,
+      _created_by: userId,
+    });
+
+    if (refundError) {
       await supabaseAdmin
         .from('orders')
-        .update({ status: 'refunded', status_reason: `${dispatch.message} Saldo reembolsado.` })
+        .update({
+          status: 'failed',
+          status_reason: `${dispatch.message} No se pudo reembolsar automáticamente: ${refundError.message}`,
+        })
         .eq('id', order.id);
       return {
         ok: false as const,
         insufficient: false as const,
         orderCode: order.order_code,
-        message: `${dispatch.message} Te devolvimos el saldo.`,
+        message: `${dispatch.message} No pudimos devolver el saldo automáticamente, contáctanos con el código ${order.order_code}.`,
       };
     }
 
+    await supabaseAdmin
+      .from('orders')
+      .update({ status: 'refunded', status_reason: `${dispatch.message} Saldo reembolsado.` })
+      .eq('id', order.id);
+
     return {
-      ok: true as const,
+      ok: false as const,
+      insufficient: false as const,
       orderCode: order.order_code,
-      status: 'payment_approved',
-      message: dispatch.message,
+      message: `${dispatch.message} Te devolvimos el saldo.`,
     };
   });
+
