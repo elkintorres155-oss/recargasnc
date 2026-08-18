@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MisPedidosRouteImport } from './routes/mis-pedidos'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
+import { Route as ApiPublicWebhooksBinanceRouteImport } from './routes/api/public/webhooks/binance'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,12 @@ const ProductoIdRoute = ProductoIdRouteImport.update({
   path: '/producto/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksBinanceRoute =
+  ApiPublicWebhooksBinanceRouteImport.update({
+    id: '/api/public/webhooks/binance',
+    path: '/api/public/webhooks/binance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +54,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +62,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +71,33 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +106,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   MisPedidosRoute: typeof MisPedidosRoute
   ProductoIdRoute: typeof ProductoIdRoute
+  ApiPublicWebhooksBinanceRoute: typeof ApiPublicWebhooksBinanceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/binance': {
+      id: '/api/public/webhooks/binance'
+      path: '/api/public/webhooks/binance'
+      fullPath: '/api/public/webhooks/binance'
+      preLoaderRoute: typeof ApiPublicWebhooksBinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +162,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   MisPedidosRoute: MisPedidosRoute,
   ProductoIdRoute: ProductoIdRoute,
+  ApiPublicWebhooksBinanceRoute: ApiPublicWebhooksBinanceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
