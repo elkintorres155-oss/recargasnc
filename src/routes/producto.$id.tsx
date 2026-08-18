@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyWallet } from "@/lib/wallet.functions";
 import { purchaseWithBalance } from "@/lib/purchase.functions";
+import { useSessionState } from "@/hooks/use-session";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { findProduct } from "@/components/store/data";
 import { formatC, useStore } from "@/lib/store-state";
@@ -46,7 +47,13 @@ function ProductPage() {
   const qc = useQueryClient();
   const fetchWallet = useServerFn(getMyWallet);
   const buy = useServerFn(purchaseWithBalance);
-  const wallet = useQuery({ queryKey: ["wallet"], queryFn: () => fetchWallet(), retry: false });
+  const session = useSessionState();
+  const wallet = useQuery({
+    queryKey: ["wallet"],
+    queryFn: () => fetchWallet(),
+    retry: false,
+    enabled: session === "signed-in",
+  });
 
   if (!base) {
     return (
@@ -79,7 +86,7 @@ function ProductPage() {
       setError("Ingresa tu ID de jugador para continuar.");
       return;
     }
-    if (!wallet.data) {
+    if (session !== "signed-in") {
       navigate({ to: "/auth" });
       return;
     }
