@@ -9,6 +9,7 @@ import {
   adminUserTransactions,
 } from "@/lib/wallet.functions";
 import { formatC } from "@/lib/store-state";
+import { useSessionState } from "@/hooks/use-session";
 
 const inputCls =
   "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
@@ -34,15 +35,20 @@ export function AdminWallets() {
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
 
+  const session = useSessionState();
+  const enabled = session === "signed-in";
+
   const topups = useQuery({
     queryKey: ["admin-topups"],
     queryFn: () => listTopups(),
+    enabled,
     retry: false,
   });
 
   const users = useQuery({
     queryKey: ["admin-wallets", q],
     queryFn: () => search({ data: { q } }),
+    enabled,
     retry: false,
   });
 
@@ -84,7 +90,7 @@ export function AdminWallets() {
     }
   };
 
-  if (topups.error || users.error) {
+  if (!enabled || topups.error || users.error) {
     return (
       <section className="mt-6 rounded-3xl border border-border bg-card/60 p-5">
         <h2 className="text-sm font-extrabold uppercase tracking-wide">Gestión de saldos</h2>
