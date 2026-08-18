@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { Category, Pack, Product } from "@/components/store/data";
+import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 
 export const Route = createFileRoute("/admin")({
@@ -530,6 +531,8 @@ function AdminPage() {
             </>
           ) : null}
         </section>
+
+        <ProviderCatalog />
 
         <div className="mt-6 flex items-center gap-3">
           <button
