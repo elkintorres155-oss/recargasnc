@@ -11,8 +11,8 @@ export const getStoreSettings = createServerFn({ method: 'GET' }).handler(async 
     .eq('id', 'default')
     .maybeSingle();
   return {
-    data: (data?.data ?? null) as Record<string, unknown> | null,
-    updatedAt: data?.updated_at ?? null,
+    json: data?.data ? JSON.stringify(data.data) : null,
+    updatedAt: (data?.updated_at ?? null) as string | null,
   };
 });
 
@@ -27,13 +27,13 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 /** Guarda la configuración completa (solo administradores). */
 export const saveStoreSettings = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ data: z.record(z.any()) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ json: z.string().max(4_000_000) }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { error } = await supabaseAdmin
       .from('store_settings')
-      .upsert({ id: 'default', data: data.data, updated_at: new Date().toISOString() });
+      .upsert({ id: 'default', data: JSON.parse(data.json), updated_at: new Date().toISOString() });
     if (error) return { ok: false as const, message: error.message };
     return { ok: true as const };
   });

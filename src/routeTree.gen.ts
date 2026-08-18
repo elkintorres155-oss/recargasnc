@@ -17,6 +17,7 @@ import { Route as RecargarSaldoRouteImport } from './routes/recargar-saldo'
 import { Route as SaldoRouteImport } from './routes/saldo'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
 import { Route as ApiPublicIpRouteImport } from './routes/api/public/ip'
+import { Route as ApiPublicImgSplatRouteImport } from './routes/api/public/img/$'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicWebhooksBinanceRouteImport } from './routes/api/public/webhooks/binance'
 
@@ -60,6 +61,11 @@ const ApiPublicIpRoute = ApiPublicIpRouteImport.update({
   path: '/api/public/ip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImgSplatRoute = ApiPublicImgSplatRouteImport.update({
+  id: '/api/public/img/$',
+  path: '/api/public/img/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
   '/api/public/ip': typeof ApiPublicIpRoute
+  '/api/public/img/$': typeof ApiPublicImgSplatRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   fileRoutesByTo: FileRoutesByTo
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   id:
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/saldo'
     | '/producto/$id'
     | '/api/public/ip'
+    | '/api/public/img/$'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   fileRoutesById: FileRoutesById
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   SaldoRoute: typeof SaldoRoute
   ProductoIdRoute: typeof ProductoIdRoute
   ApiPublicIpRoute: typeof ApiPublicIpRoute
+  ApiPublicImgSplatRoute: typeof ApiPublicImgSplatRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicWebhooksBinanceRoute: typeof ApiPublicWebhooksBinanceRoute
 }
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img/$': {
+      id: '/api/public/img/$'
+      path: '/api/public/img/$'
+      fullPath: '/api/public/img/$'
+      preLoaderRoute: typeof ApiPublicImgSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   SaldoRoute: SaldoRoute,
   ProductoIdRoute: ProductoIdRoute,
   ApiPublicIpRoute: ApiPublicIpRoute,
+  ApiPublicImgSplatRoute: ApiPublicImgSplatRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicWebhooksBinanceRoute: ApiPublicWebhooksBinanceRoute,
 }
