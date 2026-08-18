@@ -414,7 +414,8 @@ function AdminPage() {
                             tag: "Recarga",
                             image: current.items[0]?.image ?? "",
                             needsId: true,
-                            packs: [{ id: "paquete-1", label: "Paquete 1", price: 100 }],
+                            providerProductId: "",
+                            packs: [{ id: "paquete-1", label: "Paquete 1", price: 100, sku: "" }],
                           },
                         ],
                       });
@@ -559,6 +560,7 @@ function AdminPage() {
                                   id: slugify(`paquete-${p.packs.length + 1}-${Date.now()}`),
                                   label: `Paquete ${p.packs.length + 1}`,
                                   price: 100,
+                                  sku: "",
                                 },
                               ],
                             })
