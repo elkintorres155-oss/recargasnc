@@ -90,7 +90,7 @@ export function AdminWallets() {
     }
   };
 
-  if (topups.error || users.error) {
+  if (!enabled || topups.error || users.error) {
     return (
       <section className="mt-6 rounded-3xl border border-border bg-card/60 p-5">
         <h2 className="text-sm font-extrabold uppercase tracking-wide">Gestión de saldos</h2>
