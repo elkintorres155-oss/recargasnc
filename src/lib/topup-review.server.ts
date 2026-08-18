@@ -68,7 +68,7 @@ export async function reviewTopupById(params: {
     _description: `Recarga ${req.method_name}`,
     _reference: req.reference ?? '',
     _topup_request_id: req.id,
-    _created_by: reviewerId ?? undefined,
+    ...(reviewerId ? { _created_by: reviewerId } : {}),
   });
   if (txError) {
     await supabaseAdmin
