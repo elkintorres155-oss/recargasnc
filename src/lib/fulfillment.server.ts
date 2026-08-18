@@ -144,10 +144,21 @@ export async function dispatchToProvider(input: {
     const body = res.body as { order_id?: string; data?: { order_id?: string }; message?: string };
     const providerOrderId = body?.order_id ?? body?.data?.order_id ?? null;
     if (!res.ok) {
+      const providerError =
+        typeof body?.message === 'string'
+          ? body.message
+          : typeof (body as { error?: { message?: unknown } })?.error?.message === 'string'
+            ? (body as { error: { message: string } }).error.message
+            : '';
+      console.warn('[flashtopup] provider rejected order', {
+        status: res.status,
+        body: res.body,
+        productCode: input.packId || input.productId,
+      });
       return {
         dispatched: false,
         providerOrderId: null,
-        message: `El proveedor rechazó la recarga (${res.status}). Se procesará manualmente.`,
+        message: `El proveedor rechazó la recarga (${res.status})${providerError ? `: ${providerError}` : ''}. Se procesará manualmente.`,
       };
     }
     return {
