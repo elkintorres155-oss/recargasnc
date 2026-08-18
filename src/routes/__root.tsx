@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "../lib/store-state";
+import { getStoreSettings } from "../lib/settings.functions";
 
 function NotFoundComponent() {
   return (
@@ -106,6 +107,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
   }),
 
+  loader: async () => {
+    try {
+      const res = await getStoreSettings();
+      return { settingsJson: res?.json ?? null };
+    } catch {
+      return { settingsJson: null };
+    }
+  },
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -128,10 +138,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { settingsJson } = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
+      <StoreProvider initialJson={settingsJson}>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </StoreProvider>
