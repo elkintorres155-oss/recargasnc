@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadCatalogImage } from "@/lib/settings.functions";
 import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
