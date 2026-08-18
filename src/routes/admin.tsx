@@ -79,6 +79,7 @@ function AdminPage() {
   const [pin, setPin] = useState("");
   const [ok, setOk] = useState(false);
   const [cat, setCat] = useState(0);
+  const [tab, setTab] = useState<TabId>("general");
 
   if (!ok) {
     return (
