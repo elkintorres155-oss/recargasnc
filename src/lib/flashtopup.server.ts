@@ -70,6 +70,57 @@ const VARIANTS: Array<{ name: string; build: (p: SigParts) => string }> = [
 
 let workingVariant: string | null = null;
 
+/**
+ * Si hay un relay/proxy con IP fija configurado (TOPUP_PROXY_URL), todas las
+ * llamadas al proveedor salen por ahí para cumplir su lista blanca de IP.
+ */
+async function sendThroughProxyOrDirect(
+  fullUrl: string,
+  method: 'GET' | 'POST',
+  headers: Record<string, string>,
+  bodyStr: string,
+): Promise<Response> {
+  const proxyUrl = process.env['TOPUP_PROXY_URL'];
+  const proxySecret = process.env['TOPUP_PROXY_SECRET'];
+
+  if (proxyUrl) {
+    const relayRes = await fetch(proxyUrl.replace(/\/$/, ''), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
+      },
+      body: JSON.stringify({
+        url: fullUrl,
+        method,
+        headers,
+        body: method === 'POST' ? bodyStr : undefined,
+      }),
+    });
+
+    const relayText = await relayRes.text();
+    if (!relayRes.ok) {
+      return new Response(
+        JSON.stringify({ error: 'PROXY_ERROR', status: relayRes.status, detail: relayText }),
+        { status: 502, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
+    try {
+      const parsed = JSON.parse(relayText) as { status: number; body: string };
+      return new Response(parsed.body ?? '', { status: parsed.status ?? 502 });
+    } catch {
+      return new Response(relayText, { status: relayRes.status });
+    }
+  }
+
+  return fetch(fullUrl, {
+    method,
+    headers,
+    ...(method === 'POST' ? { body: bodyStr } : {}),
+  });
+}
+
 function isSignatureError(status: number, body: unknown): boolean {
   if (status !== 401 && status !== 403) return false;
   const txt = typeof body === 'string' ? body : JSON.stringify(body ?? '');
@@ -123,11 +174,7 @@ async function doRequest(
     };
     if (method === 'POST') headers['Content-Type'] = 'application/json';
 
-    const res = await fetch(fullUrl, {
-      method,
-      headers,
-      ...(method === 'POST' ? { body: bodyStr } : {}),
-    });
+    const res = await sendThroughProxyOrDirect(fullUrl, method, headers, bodyStr);
 
     const text = await res.text();
     let parsed: unknown = text;
