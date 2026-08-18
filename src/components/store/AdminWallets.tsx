@@ -66,8 +66,8 @@ export function AdminWallets() {
     const motive = approve ? "" : window.prompt("Motivo del rechazo:") ?? "";
     setBusyId(topupId);
     try {
-      await review({ data: { topupId, approve, reason: motive } });
-      setMsg(approve ? "Recarga aprobada." : "Recarga rechazada.");
+      const res = await review({ data: { topupId, approve, reason: motive } });
+      setMsg(res?.message ?? (approve ? "Recarga aprobada." : "Recarga rechazada."));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Error al procesar.");
     } finally {
