@@ -6,9 +6,10 @@ export function StoreHeader() {
   const { settings } = useStore();
   const [open, setOpen] = useState(false);
 
-  const links: Array<{ label: string; to: "/" | "/admin"; hash?: string }> = [
+  const links: Array<{ label: string; to: "/" | "/admin" | "/saldo"; hash?: string }> = [
     { label: "Inicio", to: "/" },
     { label: "Catálogo", to: "/", hash: "catalogo" },
+    { label: "Mi saldo", to: "/saldo" },
     { label: "Admin", to: "/admin" },
   ];
 
