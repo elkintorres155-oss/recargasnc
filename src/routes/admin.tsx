@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadCatalogImage } from "@/lib/settings.functions";
 import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
@@ -43,6 +45,9 @@ const inputCls =
 
 function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
+  const upload = useServerFn(uploadCatalogImage);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   return (
     <div className="flex items-center gap-3">
       <img
@@ -67,25 +72,42 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
+            setErr("");
+            setBusy(true);
             const reader = new FileReader();
-            reader.onload = () => onChange(String(reader.result));
+            reader.onload = async () => {
+              try {
+                const res = await upload({
+                  data: { fileName: file.name, dataUrl: String(reader.result) },
+                });
+                if (res.ok) onChange(res.url);
+                else setErr(res.message);
+              } catch {
+                setErr("No se pudo subir la imagen (inicia sesión como admin).");
+              } finally {
+                setBusy(false);
+              }
+            };
             reader.readAsDataURL(file);
           }}
         />
         <button
           type="button"
+          disabled={busy}
           onClick={() => ref.current?.click()}
-          className="mt-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="mt-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-60"
         >
-          📷 Subir imagen
+          {busy ? "Subiendo..." : "📷 Subir imagen"}
         </button>
+        {err ? <p className="mt-1 text-xs font-semibold text-destructive">{err}</p> : null}
       </div>
     </div>
   );
 }
 
+
 function AdminPage() {
-  const { settings, setSettings, categories } = useStore();
+  const { settings, setSettings, categories, saving, saveError } = useStore();
   const [pin, setPin] = useState("");
   const [ok, setOk] = useState(false);
   const [cat, setCat] = useState(0);
@@ -179,6 +201,20 @@ function AdminPage() {
             </button>
           ))}
         </nav>
+
+        <p className="mb-4 text-xs font-semibold">
+          {saving ? (
+            <span className="text-muted-foreground">Guardando en el servidor...</span>
+          ) : saveError ? (
+            <span className="text-destructive">{saveError}</span>
+          ) : (
+            <span className="text-muted-foreground">
+              Los cambios se guardan en línea y los ven todos los visitantes.
+            </span>
+          )}
+        </p>
+
+
 
         <section className="rounded-3xl border border-border bg-card/60 p-5" hidden={tab !== "general"}>
           <h2 className="text-sm font-extrabold uppercase tracking-wide">Configuración general</h2>
