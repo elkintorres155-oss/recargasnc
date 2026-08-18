@@ -16,6 +16,7 @@ import { Route as MisPedidosRouteImport } from './routes/mis-pedidos'
 import { Route as RecargarSaldoRouteImport } from './routes/recargar-saldo'
 import { Route as SaldoRouteImport } from './routes/saldo'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
+import { Route as ApiPublicIpRouteImport } from './routes/api/public/ip'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicWebhooksBinanceRouteImport } from './routes/api/public/webhooks/binance'
 
@@ -54,6 +55,11 @@ const ProductoIdRoute = ProductoIdRouteImport.update({
   path: '/producto/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIpRoute = ApiPublicIpRouteImport.update({
+  id: '/api/public/ip',
+  path: '/api/public/ip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/recargar-saldo': typeof RecargarSaldoRoute
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/ip': typeof ApiPublicIpRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/recargar-saldo': typeof RecargarSaldoRoute
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/ip': typeof ApiPublicIpRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/recargar-saldo': typeof RecargarSaldoRoute
   '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/ip': typeof ApiPublicIpRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/recargar-saldo'
     | '/saldo'
     | '/producto/$id'
+    | '/api/public/ip'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   fileRoutesByTo: FileRoutesByTo
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/recargar-saldo'
     | '/saldo'
     | '/producto/$id'
+    | '/api/public/ip'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   id:
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/recargar-saldo'
     | '/saldo'
     | '/producto/$id'
+    | '/api/public/ip'
     | '/api/public/telegram/webhook'
     | '/api/public/webhooks/binance'
   fileRoutesById: FileRoutesById
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   RecargarSaldoRoute: typeof RecargarSaldoRoute
   SaldoRoute: typeof SaldoRoute
   ProductoIdRoute: typeof ProductoIdRoute
+  ApiPublicIpRoute: typeof ApiPublicIpRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicWebhooksBinanceRoute: typeof ApiPublicWebhooksBinanceRoute
 }
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ip': {
+      id: '/api/public/ip'
+      path: '/api/public/ip'
+      fullPath: '/api/public/ip'
+      preLoaderRoute: typeof ApiPublicIpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecargarSaldoRoute: RecargarSaldoRoute,
   SaldoRoute: SaldoRoute,
   ProductoIdRoute: ProductoIdRoute,
+  ApiPublicIpRoute: ApiPublicIpRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicWebhooksBinanceRoute: ApiPublicWebhooksBinanceRoute,
 }
