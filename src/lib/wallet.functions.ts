@@ -207,8 +207,9 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
       .eq('id', data.topupId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!req) throw new Error('Solicitud no encontrada');
-    if (req.status !== 'pending') throw new Error('Esta solicitud ya fue procesada.');
+    if (!req) return { ok: false, approved: false, alreadyProcessed: false, message: 'Solicitud no encontrada.' };
+    if (req.status !== 'pending')
+      return { ok: false, approved: false, alreadyProcessed: true, message: 'Esta solicitud ya fue procesada.' };
 
     if (!data.approve) {
       await supabaseAdmin
@@ -221,7 +222,7 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
         })
         .eq('id', req.id)
         .eq('status', 'pending');
-      return { ok: true, approved: false };
+      return { ok: true, approved: false, alreadyProcessed: false, message: 'Recarga rechazada.' };
     }
 
     // Marcar aprobada primero (guard contra doble acreditación por condición de carrera)
@@ -238,7 +239,8 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
       .select('id')
       .maybeSingle();
     if (claimError) throw new Error(claimError.message);
-    if (!claimed) throw new Error('Esta solicitud ya fue procesada.');
+    if (!claimed)
+      return { ok: false, approved: false, alreadyProcessed: true, message: 'Esta solicitud ya fue procesada.' };
 
     const { error: txError } = await supabaseAdmin.rpc('apply_wallet_transaction', {
       _user_id: req.user_id,
@@ -256,7 +258,7 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
         .eq('id', req.id);
       throw new Error(txError.message);
     }
-    return { ok: true, approved: true };
+    return { ok: true, approved: true, alreadyProcessed: false, message: 'Recarga aprobada.' };
   });
 
 /** Busca usuarios por correo o nombre y devuelve su saldo. */
