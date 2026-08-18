@@ -43,6 +43,9 @@ const inputCls =
 
 function ImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
+  const upload = useServerFn(uploadCatalogImage);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   return (
     <div className="flex items-center gap-3">
       <img
@@ -67,22 +70,39 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
+            setErr("");
+            setBusy(true);
             const reader = new FileReader();
-            reader.onload = () => onChange(String(reader.result));
+            reader.onload = async () => {
+              try {
+                const res = await upload({
+                  data: { fileName: file.name, dataUrl: String(reader.result) },
+                });
+                if (res.ok) onChange(res.url);
+                else setErr(res.message);
+              } catch {
+                setErr("No se pudo subir la imagen (inicia sesión como admin).");
+              } finally {
+                setBusy(false);
+              }
+            };
             reader.readAsDataURL(file);
           }}
         />
         <button
           type="button"
+          disabled={busy}
           onClick={() => ref.current?.click()}
-          className="mt-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="mt-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-60"
         >
-          📷 Subir imagen
+          {busy ? "Subiendo..." : "📷 Subir imagen"}
         </button>
+        {err ? <p className="mt-1 text-xs font-semibold text-destructive">{err}</p> : null}
       </div>
     </div>
   );
 }
+
 
 function AdminPage() {
   const { settings, setSettings, categories } = useStore();
