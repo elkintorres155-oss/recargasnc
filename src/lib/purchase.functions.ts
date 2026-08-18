@@ -91,7 +91,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     const dispatch = await dispatchToProvider({
       orderId: order.id,
       productId: data.productId,
-      packId: data.packId,
+      packId: data.packSku || data.packId,
       playerId: data.playerId,
     });
 
