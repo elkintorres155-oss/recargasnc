@@ -69,7 +69,13 @@ export function ProviderCatalog() {
         <button
           type="button"
           disabled={loading}
-          onClick={() => run(() => getServices({ data: { productId } }))}
+          onClick={() => {
+            if (!productId.trim()) {
+              setError("Escribe el ID del producto primero.");
+              return;
+            }
+            void run(() => getServices({ data: { productId: productId.trim() } }));
+          }}
           className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
         >
           Ver servicios
