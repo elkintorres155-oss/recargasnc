@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { listProviderProducts, listProviderServices } from "@/lib/provider.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 const inputCls =
   "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
@@ -18,15 +19,26 @@ export function ProviderCatalog() {
     setError("");
     setResult("");
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setError("Inicia sesión como administrador para consultar al proveedor.");
+        return;
+      }
       const res = await fn();
       if (!res.ok) setError(`El proveedor respondió ${res.status}`);
       setResult(JSON.stringify(JSON.parse(res.json), null, 2));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo consultar al proveedor");
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(
+        /unauthorized|401/i.test(msg)
+          ? "Sesión no válida: inicia sesión como administrador."
+          : msg || "No se pudo consultar al proveedor",
+      );
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <section className="mt-6 rounded-2xl surface-card p-4">
@@ -57,7 +69,13 @@ export function ProviderCatalog() {
         <button
           type="button"
           disabled={loading}
-          onClick={() => run(() => getServices({ data: { productId } }))}
+          onClick={() => {
+            if (!productId.trim()) {
+              setError("Escribe el ID del producto primero.");
+              return;
+            }
+            void run(() => getServices({ data: { productId: productId.trim() } }));
+          }}
           className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
         >
           Ver servicios
