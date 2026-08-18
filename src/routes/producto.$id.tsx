@@ -1,5 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyWallet } from "@/lib/wallet.functions";
+import { purchaseWithBalance } from "@/lib/purchase.functions";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { findProduct } from "@/components/store/data";
 import { formatC, useStore } from "@/lib/store-state";
@@ -35,6 +39,14 @@ function ProductPage() {
   const [playerId, setPlayerId] = useState("");
   const [bankId, setBankId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [result, setResult] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fetchWallet = useServerFn(getMyWallet);
+  const buy = useServerFn(purchaseWithBalance);
+  const wallet = useQuery({ queryKey: ["wallet"], queryFn: () => fetchWallet(), retry: false });
 
   if (!base) {
     return (
@@ -55,6 +67,48 @@ function ProductPage() {
 
   const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
   const bank = activeBanks.find((b) => b.id === bankId) ?? activeBanks[0];
+
+  const payWithBalance = async () => {
+    setError("");
+    setResult("");
+    if (!pack) {
+      setError("Este producto aún no tiene paquetes configurados.");
+      return;
+    }
+    if (base.needsId && !playerId.trim()) {
+      setError("Ingresa tu ID de jugador para continuar.");
+      return;
+    }
+    if (!wallet.data) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await buy({
+        data: {
+          productId: base.id,
+          productName: base.name,
+          packId: pack.id,
+          packLabel: pack.label,
+          playerId: playerId.trim(),
+          amountNio: pack.price,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["wallet"] });
+      if (!res.ok && "insufficient" in res && res.insufficient) {
+        setError(`Saldo insuficiente. Te faltan ${formatC(res.missing)} para completar esta compra.`);
+      } else if (!res.ok) {
+        setError(res.message);
+      } else {
+        setResult(`¡Listo! Orden ${res.orderCode}. ${res.message}`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const order = () => {
     if (base.needsId && !playerId.trim()) {
