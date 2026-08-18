@@ -34,6 +34,7 @@ export function AdminWallets() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const session = useSessionState();
   const enabled = session === "signed-in";
@@ -60,14 +61,19 @@ export function AdminWallets() {
   });
 
   const act = async (topupId: string, approve: boolean) => {
+    if (busyId) return;
     setMsg("");
     const motive = approve ? "" : window.prompt("Motivo del rechazo:") ?? "";
+    setBusyId(topupId);
     try {
       await review({ data: { topupId, approve, reason: motive } });
-      await qc.invalidateQueries({ queryKey: ["admin-topups"] });
-      await qc.invalidateQueries({ queryKey: ["admin-wallets"] });
+      setMsg(approve ? "Recarga aprobada." : "Recarga rechazada.");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Error al procesar.");
+    } finally {
+      setBusyId(null);
+      await qc.invalidateQueries({ queryKey: ["admin-topups"] });
+      await qc.invalidateQueries({ queryKey: ["admin-wallets"] });
     }
   };
 
@@ -141,15 +147,17 @@ export function AdminWallets() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
+                  disabled={busyId !== null}
                   onClick={() => act(t.id, true)}
-                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground"
+                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground disabled:opacity-50"
                 >
-                  Aprobar
+                  {busyId === t.id ? "Procesando…" : "Aprobar"}
                 </button>
                 <button
                   type="button"
+                  disabled={busyId !== null}
                   onClick={() => act(t.id, false)}
-                  className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-destructive"
+                  className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-destructive disabled:opacity-50"
                 >
                   Rechazar
                 </button>
