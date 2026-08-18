@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { Category, Pack, Product } from "@/components/store/data";
+import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 
@@ -531,6 +532,8 @@ function AdminPage() {
             </>
           ) : null}
         </section>
+
+        <AdminWallets />
 
         <ProviderCatalog />
 

@@ -13,7 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MisPedidosRouteImport } from './routes/mis-pedidos'
+import { Route as RecargarSaldoRouteImport } from './routes/recargar-saldo'
+import { Route as SaldoRouteImport } from './routes/saldo'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
+import { Route as ApiPublicWebhooksBinanceRouteImport } from './routes/api/public/webhooks/binance'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,25 +38,47 @@ const MisPedidosRoute = MisPedidosRouteImport.update({
   path: '/mis-pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecargarSaldoRoute = RecargarSaldoRouteImport.update({
+  id: '/recargar-saldo',
+  path: '/recargar-saldo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaldoRoute = SaldoRouteImport.update({
+  id: '/saldo',
+  path: '/saldo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductoIdRoute = ProductoIdRouteImport.update({
   id: '/producto/$id',
   path: '/producto/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksBinanceRoute =
+  ApiPublicWebhooksBinanceRouteImport.update({
+    id: '/api/public/webhooks/binance',
+    path: '/api/public/webhooks/binance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
+  '/recargar-saldo': typeof RecargarSaldoRoute
+  '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
+  '/recargar-saldo': typeof RecargarSaldoRoute
+  '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +86,42 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/mis-pedidos': typeof MisPedidosRoute
+  '/recargar-saldo': typeof RecargarSaldoRoute
+  '/saldo': typeof SaldoRoute
   '/producto/$id': typeof ProductoIdRoute
+  '/api/public/webhooks/binance': typeof ApiPublicWebhooksBinanceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/recargar-saldo'
+    | '/saldo'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/mis-pedidos' | '/producto/$id'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/recargar-saldo'
+    | '/saldo'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/mis-pedidos'
+    | '/recargar-saldo'
+    | '/saldo'
+    | '/producto/$id'
+    | '/api/public/webhooks/binance'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,7 +129,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   MisPedidosRoute: typeof MisPedidosRoute
+  RecargarSaldoRoute: typeof RecargarSaldoRoute
+  SaldoRoute: typeof SaldoRoute
   ProductoIdRoute: typeof ProductoIdRoute
+  ApiPublicWebhooksBinanceRoute: typeof ApiPublicWebhooksBinanceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,11 +165,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MisPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recargar-saldo': {
+      id: '/recargar-saldo'
+      path: '/recargar-saldo'
+      fullPath: '/recargar-saldo'
+      preLoaderRoute: typeof RecargarSaldoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saldo': {
+      id: '/saldo'
+      path: '/saldo'
+      fullPath: '/saldo'
+      preLoaderRoute: typeof SaldoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/producto/$id': {
       id: '/producto/$id'
       path: '/producto/$id'
       fullPath: '/producto/$id'
       preLoaderRoute: typeof ProductoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/binance': {
+      id: '/api/public/webhooks/binance'
+      path: '/api/public/webhooks/binance'
+      fullPath: '/api/public/webhooks/binance'
+      preLoaderRoute: typeof ApiPublicWebhooksBinanceRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -124,7 +201,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   MisPedidosRoute: MisPedidosRoute,
+  RecargarSaldoRoute: RecargarSaldoRoute,
+  SaldoRoute: SaldoRoute,
   ProductoIdRoute: ProductoIdRoute,
+  ApiPublicWebhooksBinanceRoute: ApiPublicWebhooksBinanceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
