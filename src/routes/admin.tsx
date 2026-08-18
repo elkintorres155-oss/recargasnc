@@ -306,7 +306,10 @@ function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-border bg-card/60 p-5">
+        <section
+          className="mt-6 rounded-3xl border border-border bg-card/60 p-5"
+          hidden={tab !== "catalogo"}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wide">
               Secciones, productos y precios (C$)
