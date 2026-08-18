@@ -176,6 +176,32 @@ function ProductPage() {
 
             {error ? <p className="mt-4 text-sm font-semibold text-destructive">{error}</p> : null}
 
+            {wallet.data ? (
+              <div className="mt-6 rounded-2xl border border-border bg-card/70 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Tu saldo:{" "}
+                    <span className="font-extrabold text-primary">
+                      {formatC(wallet.data.balance)}
+                    </span>
+                  </p>
+                  <Link to="/recargar-saldo" className="text-xs font-bold text-primary">
+                    Recargar saldo
+                  </Link>
+                </div>
+                {pack && wallet.data.balance < pack.price ? (
+                  <p className="mt-2 text-xs font-semibold text-destructive">
+                    Saldo insuficiente. Te faltan {formatC(pack.price - wallet.data.balance)} para
+                    completar esta compra.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {result ? (
+              <p className="mt-4 text-sm font-semibold text-primary">{result}</p>
+            ) : null}
+
             <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/70 p-4">
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Total a pagar</p>
@@ -185,12 +211,21 @@ function ProductPage() {
               </div>
               <button
                 type="button"
+                disabled={busy}
+                onClick={payWithBalance}
+                className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+              >
+                {busy ? "Procesando..." : "Pagar con mi saldo"}
+              </button>
+              <button
+                type="button"
                 onClick={order}
-                className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-primary-foreground transition-opacity hover:opacity-90"
+                className="rounded-full border border-border px-6 py-3 text-sm font-extrabold text-muted-foreground hover:text-foreground"
               >
                 Comprar por WhatsApp
               </button>
             </div>
+
           </div>
         </div>
       </main>
