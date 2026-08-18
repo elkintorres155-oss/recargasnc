@@ -123,11 +123,7 @@ async function doRequest(
     };
     if (method === 'POST') headers['Content-Type'] = 'application/json';
 
-    const res = await fetch(fullUrl, {
-      method,
-      headers,
-      ...(method === 'POST' ? { body: bodyStr } : {}),
-    });
+    const res = await sendThroughProxyOrDirect(fullUrl, method, headers, bodyStr);
 
     const text = await res.text();
     let parsed: unknown = text;
