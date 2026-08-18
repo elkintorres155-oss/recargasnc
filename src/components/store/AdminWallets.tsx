@@ -147,15 +147,17 @@ export function AdminWallets() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
+                  disabled={busyId !== null}
                   onClick={() => act(t.id, true)}
-                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground"
+                  className="rounded-full bg-primary px-4 py-1.5 text-xs font-extrabold text-primary-foreground disabled:opacity-50"
                 >
-                  Aprobar
+                  {busyId === t.id ? "Procesando…" : "Aprobar"}
                 </button>
                 <button
                   type="button"
+                  disabled={busyId !== null}
                   onClick={() => act(t.id, false)}
-                  className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-destructive"
+                  className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-destructive disabled:opacity-50"
                 >
                   Rechazar
                 </button>
