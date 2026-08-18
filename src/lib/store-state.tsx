@@ -66,49 +66,87 @@ type Ctx = {
   categories: Category[];
   banks: Bank[];
   findItem: (id: string) => Product | undefined;
+  saving: boolean;
+  saveError: string;
 };
 
 const StoreContext = createContext<Ctx | null>(null);
 
+function merge(parsed: Partial<StoreSettings>): StoreSettings {
+  return {
+    ...defaultSettings,
+    ...parsed,
+    banks: parsed.banks?.length ? parsed.banks : defaultBanks,
+    catalog: parsed.catalog?.length ? parsed.catalog : baseCategories,
+  };
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<StoreSettings>(defaultSettings);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const loadSettings = useServerFn(getStoreSettings);
+  const persist = useServerFn(saveStoreSettings);
 
+  // 1) caché local inmediata, 2) versión oficial desde la base de datos (misma para todos)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<StoreSettings>;
-        setSettingsState({
-          ...defaultSettings,
-          ...parsed,
-          banks: parsed.banks?.length ? parsed.banks : defaultBanks,
-          catalog: parsed.catalog?.length ? parsed.catalog : baseCategories,
-        });
-      }
+      if (raw) setSettingsState(merge(JSON.parse(raw) as Partial<StoreSettings>));
     } catch {
       /* ignore */
     }
+    loadSettings()
+      .then((res) => {
+        if (!res?.json) return;
+        const remote = merge(JSON.parse(res.json) as Partial<StoreSettings>);
+        setSettingsState(remote);
+        try {
+          localStorage.setItem(KEY, JSON.stringify(remote));
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {
+        /* sin conexión: se usa la caché local */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setSettings = (s: StoreSettings) => {
     setSettingsState(s);
+    setSaveError("");
     try {
       localStorage.setItem(KEY, JSON.stringify(s));
     } catch {
       /* ignore */
     }
+    setSaving(true);
+    persist({ data: { json: JSON.stringify(s) } })
+      .then((res) => {
+        if (res && !res.ok) setSaveError(res.message);
+      })
+      .catch((e: unknown) => {
+        setSaveError(
+          e instanceof Error && e.message.includes("Forbidden")
+            ? "Solo el administrador puede guardar cambios en la tienda."
+            : "No se pudieron guardar los cambios en el servidor.",
+        );
+      })
+      .finally(() => setSaving(false));
   };
 
   const value = useMemo<Ctx>(() => {
     const categories = settings.catalog;
     const findItem = (id: string) =>
       categories.flatMap((c) => c.items).find((p) => p.id === id);
-    return { settings, setSettings, categories, banks: settings.banks, findItem };
+    return { settings, setSettings, categories, banks: settings.banks, findItem, saving, saveError };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings]);
+  }, [settings, saving, saveError]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
+
 
 export function useStore() {
   const ctx = useContext(StoreContext);
