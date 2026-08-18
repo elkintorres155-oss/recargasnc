@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.apply_wallet_transaction(uuid, wallet_tx_type, numeric, text, text, uuid, uuid, uuid) FROM anon, authenticated, public;
+GRANT EXECUTE ON FUNCTION public.apply_wallet_transaction(uuid, wallet_tx_type, numeric, text, text, uuid, uuid, uuid) TO service_role;
