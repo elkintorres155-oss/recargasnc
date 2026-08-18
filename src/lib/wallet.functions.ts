@@ -122,7 +122,7 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       .single();
     if (error) throw new Error(error.message);
 
-    const { notifyAdminTelegram } = await import('@/lib/telegram.server');
+    const { notifyAdminTelegram, topupKeyboard } = await import('@/lib/telegram.server');
     const { data: prof } = await supabaseAdmin
       .from('profiles')
       .select('full_name, email')
@@ -137,8 +137,9 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         `Referencia: ${data.reference.trim() || '—'}`,
         `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
         '',
-        'Revísala en el panel → Recargas de saldo.',
+        'Apruébala o recházala aquí mismo con los botones.',
       ].join('\n'),
+      topupKeyboard(row.id),
     );
 
     return row;
@@ -199,66 +200,13 @@ export const adminReviewTopup = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => reviewSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-
-    const { data: req, error } = await supabaseAdmin
-      .from('topup_requests')
-      .select('id, user_id, amount_nio, status, method_name, reference')
-      .eq('id', data.topupId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!req) return { ok: false, approved: false, alreadyProcessed: false, message: 'Solicitud no encontrada.' };
-    if (req.status !== 'pending')
-      return { ok: false, approved: false, alreadyProcessed: true, message: 'Esta solicitud ya fue procesada.' };
-
-    if (!data.approve) {
-      await supabaseAdmin
-        .from('topup_requests')
-        .update({
-          status: 'rejected',
-          review_reason: data.reason || 'Rechazada por el administrador.',
-          reviewed_by: context.userId,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', req.id)
-        .eq('status', 'pending');
-      return { ok: true, approved: false, alreadyProcessed: false, message: 'Recarga rechazada.' };
-    }
-
-    // Marcar aprobada primero (guard contra doble acreditación por condición de carrera)
-    const { data: claimed, error: claimError } = await supabaseAdmin
-      .from('topup_requests')
-      .update({
-        status: 'approved',
-        review_reason: data.reason,
-        reviewed_by: context.userId,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', req.id)
-      .eq('status', 'pending')
-      .select('id')
-      .maybeSingle();
-    if (claimError) throw new Error(claimError.message);
-    if (!claimed)
-      return { ok: false, approved: false, alreadyProcessed: true, message: 'Esta solicitud ya fue procesada.' };
-
-    const { error: txError } = await supabaseAdmin.rpc('apply_wallet_transaction', {
-      _user_id: req.user_id,
-      _type: 'topup',
-      _amount: Number(req.amount_nio),
-      _description: `Recarga ${req.method_name}`,
-      _reference: req.reference ?? '',
-      _topup_request_id: req.id,
-      _created_by: context.userId,
+    const { reviewTopupById } = await import('@/lib/topup-review.server');
+    return await reviewTopupById({
+      topupId: data.topupId,
+      approve: data.approve,
+      reason: data.reason,
+      reviewerId: context.userId,
     });
-    if (txError) {
-      await supabaseAdmin
-        .from('topup_requests')
-        .update({ status: 'pending', review_reason: 'Error al acreditar, reintentar.' })
-        .eq('id', req.id);
-      throw new Error(txError.message);
-    }
-    return { ok: true, approved: true, alreadyProcessed: false, message: 'Recarga aprobada.' };
   });
 
 /** Busca usuarios por correo o nombre y devuelve su saldo. */
