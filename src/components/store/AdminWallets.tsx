@@ -34,6 +34,7 @@ export function AdminWallets() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const session = useSessionState();
   const enabled = session === "signed-in";
