@@ -28,6 +28,16 @@ export const Route = createFileRoute("/admin")({
 
 const PIN = "1234";
 
+const TABS = [
+  { id: "general", label: "⚙️ General" },
+  { id: "pagos", label: "🏦 Métodos de pago" },
+  { id: "catalogo", label: "🎮 Catálogo y precios" },
+  { id: "saldos", label: "💰 Recargas de saldo" },
+  { id: "proveedor", label: "🔌 Proveedor" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
 const inputCls =
   "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
@@ -79,6 +89,7 @@ function AdminPage() {
   const [pin, setPin] = useState("");
   const [ok, setOk] = useState(false);
   const [cat, setCat] = useState(0);
+  const [tab, setTab] = useState<TabId>("general");
 
   if (!ok) {
     return (
@@ -118,6 +129,7 @@ function AdminPage() {
 
   const update = (patch: Partial<typeof settings>) => setSettings({ ...settings, ...patch });
 
+
   const setBanks = (banks: Bank[]) => update({ banks });
   const setCatalog = (catalog: Category[]) => update({ catalog });
 
@@ -151,7 +163,24 @@ function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <section className="rounded-3xl border border-border bg-card/60 p-5">
+        <nav className="mb-6 flex flex-wrap gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`rounded-full border px-4 py-2 text-xs font-extrabold transition ${
+                tab === t.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <section className="rounded-3xl border border-border bg-card/60 p-5" hidden={tab !== "general"}>
           <h2 className="text-sm font-extrabold uppercase tracking-wide">Configuración general</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="text-sm">
@@ -190,7 +219,10 @@ function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-border bg-card/60 p-5">
+        <section
+          className="mt-6 rounded-3xl border border-border bg-card/60 p-5"
+          hidden={tab !== "pagos"}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wide">
               Métodos de pago y cuentas
@@ -306,7 +338,10 @@ function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-border bg-card/60 p-5">
+        <section
+          className="mt-6 rounded-3xl border border-border bg-card/60 p-5"
+          hidden={tab !== "catalogo"}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wide">
               Secciones, productos y precios (C$)
@@ -533,9 +568,9 @@ function AdminPage() {
           ) : null}
         </section>
 
-        <AdminWallets />
+        {tab === "saldos" ? <AdminWallets /> : null}
 
-        <ProviderCatalog />
+        {tab === "proveedor" ? <ProviderCatalog /> : null}
 
         <div className="mt-6 flex items-center gap-3">
           <button
