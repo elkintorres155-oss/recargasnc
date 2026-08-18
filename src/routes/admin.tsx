@@ -533,9 +533,9 @@ function AdminPage() {
           ) : null}
         </section>
 
-        <AdminWallets />
+        {tab === "saldos" ? <AdminWallets /> : null}
 
-        <ProviderCatalog />
+        {tab === "proveedor" ? <ProviderCatalog /> : null}
 
         <div className="mt-6 flex items-center gap-3">
           <button
