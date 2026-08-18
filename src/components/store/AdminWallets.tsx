@@ -34,15 +34,20 @@ export function AdminWallets() {
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
 
+  const session = useSessionState();
+  const enabled = session === "signed-in";
+
   const topups = useQuery({
     queryKey: ["admin-topups"],
     queryFn: () => listTopups(),
+    enabled,
     retry: false,
   });
 
   const users = useQuery({
     queryKey: ["admin-wallets", q],
     queryFn: () => search({ data: { q } }),
+    enabled,
     retry: false,
   });
 
