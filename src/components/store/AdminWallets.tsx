@@ -61,14 +61,19 @@ export function AdminWallets() {
   });
 
   const act = async (topupId: string, approve: boolean) => {
+    if (busyId) return;
     setMsg("");
     const motive = approve ? "" : window.prompt("Motivo del rechazo:") ?? "";
+    setBusyId(topupId);
     try {
       await review({ data: { topupId, approve, reason: motive } });
-      await qc.invalidateQueries({ queryKey: ["admin-topups"] });
-      await qc.invalidateQueries({ queryKey: ["admin-wallets"] });
+      setMsg(approve ? "Recarga aprobada." : "Recarga rechazada.");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Error al procesar.");
+    } finally {
+      setBusyId(null);
+      await qc.invalidateQueries({ queryKey: ["admin-topups"] });
+      await qc.invalidateQueries({ queryKey: ["admin-wallets"] });
     }
   };
 
