@@ -118,6 +118,7 @@ function AdminPage() {
 
   const update = (patch: Partial<typeof settings>) => setSettings({ ...settings, ...patch });
 
+
   const setBanks = (banks: Bank[]) => update({ banks });
   const setCatalog = (catalog: Category[]) => update({ catalog });
 
