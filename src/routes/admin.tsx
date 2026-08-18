@@ -202,6 +202,20 @@ function AdminPage() {
           ))}
         </nav>
 
+        <p className="mb-4 text-xs font-semibold">
+          {saving ? (
+            <span className="text-muted-foreground">Guardando en el servidor...</span>
+          ) : saveError ? (
+            <span className="text-destructive">{saveError}</span>
+          ) : (
+            <span className="text-muted-foreground">
+              Los cambios se guardan en línea y los ven todos los visitantes.
+            </span>
+          )}
+        </p>
+
+
+
         <section className="rounded-3xl border border-border bg-card/60 p-5" hidden={tab !== "general"}>
           <h2 className="text-sm font-extrabold uppercase tracking-wide">Configuración general</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
