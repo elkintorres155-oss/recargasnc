@@ -122,7 +122,6 @@ async function doRequest(
     'X-FT-Timestamp': timestamp,
     'X-FT-Nonce': nonce,
     'X-FT-Signature': signature,
-    'X-FT-Sandbox': 'true',
   };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
 
