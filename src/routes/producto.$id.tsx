@@ -32,13 +32,11 @@ export const Route = createFileRoute("/producto/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const { settings, findItem, banks } = useStore();
+  const { settings, findItem } = useStore();
   const base = findItem(id);
 
-  const activeBanks = banks.filter((b) => b.enabled);
   const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
-  const [bankId, setBankId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,7 +71,6 @@ function ProductPage() {
   }
 
   const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
-  const bank = activeBanks.find((b) => b.id === bankId) ?? activeBanks[0];
 
   const payWithBalance = async () => {
     setError("");
@@ -130,7 +127,7 @@ function ProductPage() {
     setError("");
     const msg = `Hola ${settings.storeName}! Quiero comprar:%0A• Producto: ${base.name}%0A• Paquete: ${pack.label}%0A• Precio: ${formatC(pack.price)}${
       base.needsId ? `%0A• ID de jugador: ${playerId}` : ""
-    }${bank ? `%0A• Pago: ${bank.name}${bank.account ? ` (${bank.account})` : ""}${bank.holder ? ` - ${bank.holder}` : ""}` : ""}`;
+    }`;
     window.open(`https://wa.me/${settings.whatsapp}?text=${msg}`, "_blank");
   };
 
@@ -197,43 +194,6 @@ function ProductPage() {
                   className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
                 />
               </>
-            ) : null}
-
-            <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">
-              {base.needsId ? "3." : "2."} Método de pago
-            </h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {activeBanks.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setBankId(b.id)}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                    b.id === bank?.id
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card/70 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {b.name}
-                </button>
-              ))}
-            </div>
-
-            {bank ? (
-              <div className="mt-3 rounded-2xl border border-border bg-card/70 p-4 text-sm">
-                <p className="font-bold">{bank.name}</p>
-                {bank.account ? (
-                  <p className="mt-1 text-muted-foreground">
-                    Cuenta: <span className="font-semibold text-foreground">{bank.account}</span>
-                  </p>
-                ) : null}
-                {bank.holder ? (
-                  <p className="text-muted-foreground">
-                    Titular: <span className="font-semibold text-foreground">{bank.holder}</span>
-                  </p>
-                ) : null}
-                {bank.note ? <p className="text-xs text-muted-foreground">{bank.note}</p> : null}
-              </div>
             ) : null}
 
             {error ? <p className="mt-4 text-sm font-semibold text-destructive">{error}</p> : null}
