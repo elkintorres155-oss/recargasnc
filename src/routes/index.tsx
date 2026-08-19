@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { Catalog } from "@/components/store/Catalog";
@@ -116,12 +116,6 @@ function Index() {
             Centro de recargas digitales. Atención por WhatsApp todos los días, entrega
             verificada en minutos. Precios en córdobas (C$).
           </p>
-          <Link
-            to="/admin"
-            className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-          >
-            🔐 Panel de administración
-          </Link>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} {settings.storeName}. Todos los derechos
             reservados.
