@@ -7,6 +7,7 @@ const createOrderSchema = z.object({
   productName: z.string().min(1).max(120),
   packId: z.string().max(80).default(''),
   packLabel: z.string().max(120).default(''),
+  packSku: z.string().max(120).default(''),
   playerId: z.string().max(80).default(''),
   amountNio: z.number().positive().max(500000),
   paymentMethodCode: z.string().max(60).default(''),
@@ -27,6 +28,7 @@ export const createOrder = createServerFn({ method: 'POST' })
         product_name: data.productName,
         pack_id: data.packId,
         pack_label: data.packLabel,
+        pack_sku: data.packSku,
         player_id: data.playerId,
         amount_nio: data.amountNio,
         payment_method_code: data.paymentMethodCode,
@@ -56,7 +58,7 @@ export const submitReceipt = createServerFn({ method: 'POST' })
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, amount_nio, status, product_id, pack_id, player_id')
+      .select('id, amount_nio, status, product_id, pack_id, pack_sku, player_id')
       .eq('id', data.orderId)
       .maybeSingle();
     if (orderError) throw new Error(orderError.message);
@@ -139,7 +141,7 @@ export const submitReceipt = createServerFn({ method: 'POST' })
       const dispatch = await dispatchToProvider({
         orderId: order.id,
         productId: order.product_id,
-        packId: order.pack_id,
+        packId: order.pack_sku || '',
         playerId: order.player_id,
       });
       providerMessage = dispatch.message;
