@@ -1,6 +1,10 @@
 // Cliente server-only para FlashTopUp (reseller v2), firmado con HMAC-SHA256.
 // Las credenciales viven en Secrets: TOPUP_PROVIDER_BASE_URL, TOPUP_PROVIDER_API_ID,
 // TOPUP_PROVIDER_API_KEY. Nunca se exponen al navegador.
+//
+// Cadena canónica exacta (documentada por el proveedor):
+// METHOD + "\n" + PATH + "\n" + TIMESTAMP + "\n" + NONCE + "\n" + SHA256(body)
+// La firma es HMAC-SHA256(apiKey, canonical) en hexadecimal minúsculas.
 
 type Credentials = { baseUrl: string; apiId: string; apiKey: string };
 
@@ -10,6 +14,14 @@ export function getCredentials(): Credentials | null {
   const apiKey = process.env['TOPUP_PROVIDER_API_KEY'];
   if (!baseUrl || !apiId || !apiKey) return null;
   return { baseUrl: baseUrl.replace(/\/$/, ''), apiId, apiKey };
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const enc = new TextEncoder();
+  const digest = await crypto.subtle.digest('SHA-256', enc.encode(input));
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
@@ -27,48 +39,19 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     .join('');
 }
 
-/**
- * El proveedor no documenta con exactitud la cadena canónica, así que probamos
- * varias variantes conocidas y recordamos la que funciona.
- */
-type SigParts = {
-  apiId: string;
-  timestamp: string;
-  nonce: string;
-  method: string;
-  path: string;
-  body: string;
-};
-
-const VARIANTS: Array<{ name: string; build: (p: SigParts) => string }> = [
-  { name: 'concat', build: (p) => `${p.apiId}${p.timestamp}${p.nonce}${p.body}` },
-  {
-    name: 'method-path-nl',
-    build: (p) => `${p.method}\n${p.path}\n${p.timestamp}\n${p.nonce}\n${p.body}`,
-  },
-  {
-    name: 'id-nl',
-    build: (p) => `${p.apiId}\n${p.timestamp}\n${p.nonce}\n${p.body}`,
-  },
-  {
-    name: 'method-path-pipe',
-    build: (p) => `${p.method}|${p.path}|${p.timestamp}|${p.nonce}|${p.body}`,
-  },
-  { name: 'ts-nonce-body', build: (p) => `${p.timestamp}${p.nonce}${p.body}` },
-  {
-    name: 'id-ts-nonce-path-body',
-    build: (p) => `${p.apiId}${p.timestamp}${p.nonce}${p.path}${p.body}`,
-  },
-  {
-    name: 'method-path-nl-noempty',
-    build: (p) =>
-      p.body
-        ? `${p.method}\n${p.path}\n${p.timestamp}\n${p.nonce}\n${p.body}`
-        : `${p.method}\n${p.path}\n${p.timestamp}\n${p.nonce}`,
-  },
-];
-
-let workingVariant: string | null = null;
+async function buildSignature(
+  method: 'GET' | 'POST',
+  path: string,
+  bodyStr: string,
+  creds: Credentials,
+): Promise<{ timestamp: string; nonce: string; signature: string }> {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const bodyHash = await sha256Hex(bodyStr);
+  const canonical = `${method}\n${path}\n${timestamp}\n${nonce}\n${bodyHash}`;
+  const signature = await hmacSha256Hex(creds.apiKey, canonical);
+  return { timestamp, nonce, signature };
+}
 
 /**
  * Si hay un relay/proxy con IP fija configurado (TOPUP_PROXY_URL), todas las
@@ -121,12 +104,6 @@ async function sendThroughProxyOrDirect(
   });
 }
 
-function isSignatureError(status: number, body: unknown): boolean {
-  if (status !== 401 && status !== 403) return false;
-  const txt = typeof body === 'string' ? body : JSON.stringify(body ?? '');
-  return /signature|firma/i.test(txt);
-}
-
 async function doRequest(
   method: 'GET' | 'POST',
   fullUrl: string,
@@ -136,64 +113,30 @@ async function doRequest(
   const creds = getCredentials();
   if (!creds) throw new Error('Credenciales del proveedor no configuradas');
 
-  const ordered = workingVariant
-    ? [
-        ...VARIANTS.filter((v) => v.name === workingVariant),
-        ...VARIANTS.filter((v) => v.name !== workingVariant),
-      ]
-    : VARIANTS;
+  const { timestamp, nonce, signature } = await buildSignature(method, path, bodyStr, creds);
 
-  let last: { ok: boolean; status: number; body: unknown } = {
-    ok: false,
-    status: 0,
-    body: null,
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'User-Agent': 'RecargasNC/1.0',
+    'X-FT-API-ID': creds.apiId,
+    'X-FT-Timestamp': timestamp,
+    'X-FT-Nonce': nonce,
+    'X-FT-Signature': signature,
+    'X-FT-Sandbox': 'true',
   };
+  if (method === 'POST') headers['Content-Type'] = 'application/json';
 
-  for (const variant of ordered) {
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const nonce = crypto.randomUUID().replace(/-/g, '');
-    const signature = await hmacSha256Hex(
-      creds.apiKey,
-      variant.build({
-        apiId: creds.apiId,
-        timestamp,
-        nonce,
-        method,
-        path,
-        body: bodyStr,
-      }),
-    );
+  const res = await sendThroughProxyOrDirect(fullUrl, method, headers, bodyStr);
 
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-      'User-Agent': 'RecargasNC/1.0',
-      'X-FT-API-ID': creds.apiId,
-      'X-FT-TIMESTAMP': timestamp,
-      'X-FT-NONCE': nonce,
-      'X-FT-SIGNATURE': signature,
-      'X-FT-Sandbox': 'true',
-    };
-    if (method === 'POST') headers['Content-Type'] = 'application/json';
-
-    const res = await sendThroughProxyOrDirect(fullUrl, method, headers, bodyStr);
-
-    const text = await res.text();
-    let parsed: unknown = text;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      /* respuesta no JSON */
-    }
-
-    last = { ok: res.ok, status: res.status, body: parsed };
-
-    if (!isSignatureError(res.status, parsed)) {
-      if (res.ok) workingVariant = variant.name;
-      return last;
-    }
+  const text = await res.text();
+  let parsed: unknown = text;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    /* respuesta no JSON */
   }
 
-  return last;
+  return { ok: res.ok, status: res.status, body: parsed };
 }
 
 /** GET firmado. */
@@ -225,4 +168,3 @@ export async function signedRequest(
   const canonicalPath = new URL(url).pathname;
   return doRequest('POST', url, canonicalPath, JSON.stringify(payload));
 }
-
