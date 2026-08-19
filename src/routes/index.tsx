@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { Catalog } from "@/components/store/Catalog";
