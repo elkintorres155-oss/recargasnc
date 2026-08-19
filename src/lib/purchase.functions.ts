@@ -48,6 +48,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         product_name: data.productName,
         pack_id: data.packId,
         pack_label: data.packLabel,
+        pack_sku: data.packSku,
         player_id: data.playerId,
         amount_nio: data.amountNio,
         payment_method_code: 'balance',
@@ -91,7 +92,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     const dispatch = await dispatchToProvider({
       orderId: order.id,
       productId: data.productId,
-      packId: data.packSku || data.packId,
+      packId: data.packSku,
       playerId: data.playerId,
     });
 

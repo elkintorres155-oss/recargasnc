@@ -104,16 +104,16 @@ export function judgeReceipt(analysis: ReceiptAnalysis, expected: number): Verdi
 
 /**
  * Despacho al proveedor de recargas (FlashTopUp, reseller v2, firma HMAC-SHA256).
- * Las credenciales ya están guardadas como Secrets. Falta que el proveedor
- * confirme la ruta exacta del endpoint de recarga (TOPUP_PROVIDER_ORDER_PATH)
- * y el código de producto (SKU) de cada paquete; mientras tanto la orden queda
- * aprobada y en espera de procesamiento manual.
+ * Payload documentado: reference_id + service_code + product_type + quantity
+ * más los campos del producto (user_id, y server_id cuando aplica).
+ * El `service_code` sale del SKU configurado en el panel de administración.
  */
 export async function dispatchToProvider(input: {
   orderId: string;
   productId: string;
   packId: string;
   playerId: string;
+  serverId?: string;
 }): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
   const { getCredentials, signedRequest } = await import('./flashtopup.server');
   const creds = getCredentials();
@@ -135,25 +135,54 @@ export async function dispatchToProvider(input: {
     };
   }
 
+  // El SKU del paquete debe ser el service_code exacto de GET /services.
+  const serviceCode = (input.packId || '').trim();
+  if (!serviceCode) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message:
+        'Este paquete todavía no tiene el código del proveedor (SKU) configurado. Se procesará manualmente.',
+    };
+  }
+
+  // playerId puede venir como "usuario|servidor" o "usuario (servidor)".
+  const rawPlayer = (input.playerId || '').trim();
+  const split = rawPlayer.match(/^(.+?)\s*[|(]\s*([A-Za-z0-9._-]{1,64})\s*\)?$/);
+  const userId = split ? split[1]!.trim() : rawPlayer;
+  const serverId = (input.serverId || split?.[2] || '').trim();
+
   try {
     const res = await signedRequest(orderPath, {
-      reference: input.orderId,
-      product_code: input.packId || input.productId,
-      target: input.playerId,
+      reference_id: input.orderId,
+      service_code: serviceCode,
+      product_type: 'topup',
+      quantity: 1,
+      user_id: userId,
+      ...(serverId ? { server_id: serverId } : {}),
     });
-    const body = res.body as { order_id?: string; data?: { order_id?: string }; message?: string };
-    const providerOrderId = body?.order_id ?? body?.data?.order_id ?? null;
+    const body = res.body as {
+      data?: { order_id?: string; order_status?: string };
+      order_id?: string;
+      message?: string;
+      error?: { message?: unknown; errors?: Array<{ message?: string }> };
+    };
+    const providerOrderId = body?.data?.order_id ?? body?.order_id ?? null;
     if (!res.ok) {
+      const fieldErrors = Array.isArray(body?.error?.errors)
+        ? body.error!.errors!.map((e) => e.message).filter(Boolean).join(' ')
+        : '';
       const providerError =
-        typeof body?.message === 'string'
-          ? body.message
-          : typeof (body as { error?: { message?: unknown } })?.error?.message === 'string'
-            ? (body as { error: { message: string } }).error.message
-            : '';
+        fieldErrors ||
+        (typeof body?.error?.message === 'string'
+          ? body.error.message
+          : typeof body?.message === 'string'
+            ? body.message
+            : '');
       console.warn('[flashtopup] provider rejected order', {
         status: res.status,
         body: res.body,
-        productCode: input.packId || input.productId,
+        serviceCode,
       });
       return {
         dispatched: false,
@@ -161,6 +190,7 @@ export async function dispatchToProvider(input: {
         message: `El proveedor rechazó la recarga (${res.status})${providerError ? `: ${providerError}` : ''}. Se procesará manualmente.`,
       };
     }
+
     return {
       dispatched: true,
       providerOrderId,
