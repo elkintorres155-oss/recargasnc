@@ -60,6 +60,7 @@ export type Database = {
           order_code: string
           pack_id: string
           pack_label: string
+          pack_sku: string
           paid_with_balance: boolean
           payment_method_code: string | null
           player_id: string
@@ -84,6 +85,7 @@ export type Database = {
           order_code?: string
           pack_id?: string
           pack_label?: string
+          pack_sku?: string
           paid_with_balance?: boolean
           payment_method_code?: string | null
           player_id?: string
@@ -108,6 +110,7 @@ export type Database = {
           order_code?: string
           pack_id?: string
           pack_label?: string
+          pack_sku?: string
           paid_with_balance?: boolean
           payment_method_code?: string | null
           player_id?: string
