@@ -82,6 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Recargas | Recargas de juegos, streaming y gift cards" },
       { name: "description", content: "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en córdobas (C$)." },
       { name: "author", content: "Lovable" },
+      { name: "google-site-verification", content: "39j_obiJEe3FuTLhu0UtWVFtCh-ItmA0tzrebnA13yQ" },
       { property: "og:title", content: "Recargas | Recargas de juegos, streaming y gift cards" },
       { property: "og:description", content: "Recargas de Free Fire, Roblox, PUBG y más, suscripciones de streaming y gift cards con entrega inmediata y precios en córdobas (C$)." },
       { property: "og:type", content: "website" },
