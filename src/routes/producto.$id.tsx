@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyWallet } from "@/lib/wallet.functions";
 import { purchaseWithBalance } from "@/lib/purchase.functions";
+import { checkPlayerId } from "@/lib/provider.functions";
 import { useSessionState } from "@/hooks/use-session";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { findProduct } from "@/components/store/data";
@@ -40,11 +41,15 @@ function ProductPage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkMsg, setCheckMsg] = useState("");
+  const [checkOk, setCheckOk] = useState<boolean | null>(null);
 
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchWallet = useServerFn(getMyWallet);
   const buy = useServerFn(purchaseWithBalance);
+  const verifyId = useServerFn(checkPlayerId);
   const session = useSessionState();
   const wallet = useQuery({
     queryKey: ["wallet"],
@@ -112,6 +117,36 @@ function ProductPage() {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const verify = async () => {
+    setCheckMsg("");
+    setCheckOk(null);
+    if (!pack?.sku) {
+      setCheckMsg("Este paquete aún no tiene código del proveedor (SKU).");
+      setCheckOk(false);
+      return;
+    }
+    if (!playerId.trim()) {
+      setCheckMsg("Ingresa tu ID de jugador.");
+      setCheckOk(false);
+      return;
+    }
+    if (session !== "signed-in") {
+      navigate({ to: "/auth" });
+      return;
+    }
+    setChecking(true);
+    try {
+      const res = await verifyId({ data: { serviceCode: pack.sku, userId: playerId.trim() } });
+      setCheckOk(res.valid);
+      setCheckMsg(res.message);
+    } catch (e) {
+      setCheckOk(false);
+      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -193,6 +228,21 @@ function ProductPage() {
                   placeholder="Ej: 123456789"
                   className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
                 />
+                <button
+                  type="button"
+                  onClick={verify}
+                  disabled={checking}
+                  className="mt-2 rounded-full border border-border px-4 py-2 text-xs font-extrabold text-muted-foreground hover:text-foreground disabled:opacity-60"
+                >
+                  {checking ? "Verificando..." : "Verificar ID"}
+                </button>
+                {checkMsg ? (
+                  <p
+                    className={`mt-2 text-xs font-semibold ${checkOk ? "text-primary" : "text-destructive"}`}
+                  >
+                    {checkMsg}
+                  </p>
+                ) : null}
               </>
             ) : null}
 
