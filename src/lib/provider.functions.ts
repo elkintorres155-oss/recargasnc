@@ -38,14 +38,15 @@ export const listProviderServices = createServerFn({ method: 'GET' })
  */
 export const checkPlayerId = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { serviceCode: string; userId: string; serverId?: string }) => {
+  .inputValidator((input: { serviceCode: string; userId: string; serverId?: string; validationCode?: string }) => {
     const serviceCode = String(input?.serviceCode ?? '').trim();
+    const validationCode = String(input?.validationCode ?? '').trim() || serviceCode;
     const userId = String(input?.userId ?? '').trim();
     const serverId = String(input?.serverId ?? '').trim();
     if (!serviceCode) throw new Error('Falta el código del paquete (SKU).');
     if (!userId || userId.length > 64) throw new Error('ID de jugador inválido.');
     if (serverId.length > 64) throw new Error('ID de servidor inválido.');
-    return { serviceCode, userId, serverId };
+    return { serviceCode, userId, serverId, validationCode };
   })
   .handler(async ({ data }) => {
     const { getCredentials, signedRequest } = await import('./flashtopup.server');
@@ -54,6 +55,7 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
     }
 
     const res = await signedRequest('/check-id', {
+      validation_code: data.validationCode,
       service_code: data.serviceCode,
       user_id: data.userId,
       ...(data.serverId ? { server_id: data.serverId } : {}),
