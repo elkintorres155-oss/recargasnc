@@ -49,20 +49,44 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
     return { serviceCode, userId, serverId, validationCode };
   })
   .handler(async ({ data }) => {
-    const { getCredentials, signedRequest } = await import('./flashtopup.server');
+    const { getCredentials, signedRequest, signedGet } = await import('./flashtopup.server');
     if (!getCredentials()) {
       return { ok: false, valid: false, nickname: null as string | null, message: 'Proveedor no configurado.' };
     }
 
+    // El proveedor valida con `validation_code` (p. ej. "freefire_latam"),
+    // que vive en GET /products, no con el SKU del paquete.
+    let validationCode = data.validationCode === data.serviceCode ? '' : data.validationCode;
+    if (!validationCode) {
+      const prod = await signedGet('/products');
+      const list = (prod.body as { data?: Array<{ product_code?: string; validation_code?: string; check_id_status?: string }> })?.data ?? [];
+      let best: { code: string; len: number } | null = null;
+      for (const p of list) {
+        const pc = String(p.product_code ?? '');
+        if (!pc || !p.validation_code) continue;
+        if (data.serviceCode.startsWith(pc) && (!best || pc.length > best.len)) {
+          best = { code: String(p.validation_code), len: pc.length };
+        }
+      }
+      if (!best) {
+        return {
+          ok: false,
+          valid: false,
+          nickname: null as string | null,
+          message: 'Este juego no admite verificación de ID con el proveedor.',
+        };
+      }
+      validationCode = best.code;
+    }
+
     const res = await signedRequest('/check-id', {
-      validation_code: data.validationCode,
-      service_code: data.serviceCode,
+      validation_code: validationCode,
       user_id: data.userId,
       ...(data.serverId ? { server_id: data.serverId } : {}),
     });
 
     const body = res.body as {
-      data?: { nickname?: string; username?: string; valid?: boolean };
+      data?: { nickname?: string; username?: string; account_name?: string; valid?: boolean };
       nickname?: string;
       username?: string;
       message?: string;
@@ -83,8 +107,10 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
       return { ok: false, valid: false, nickname: null as string | null, message: msg };
     }
 
-    const nickname = body?.data?.nickname ?? body?.data?.username ?? body?.nickname ?? body?.username ?? null;
+    const nickname =
+      body?.data?.account_name ?? body?.data?.nickname ?? body?.data?.username ?? body?.nickname ?? body?.username ?? null;
     const valid = body?.data?.valid !== false && Boolean(nickname || res.ok);
+
     return {
       ok: true,
       valid,
