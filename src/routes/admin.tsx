@@ -6,6 +6,8 @@ import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
+import { useIsAdmin } from "@/lib/use-is-admin";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
