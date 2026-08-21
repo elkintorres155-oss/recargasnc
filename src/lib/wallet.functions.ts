@@ -107,6 +107,53 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       if (uploadError) throw new Error(uploadError.message);
     }
 
+    // La IA lee el comprobante y extrae la REFERENCIA (y monto/banco/fecha)
+    // para que la revisión manual sea más rápida. Nunca acredita saldo sola.
+    let ai: {
+      reference: string;
+      amount: number | null;
+      bank: string;
+      date: string;
+      confidence: number;
+      verdict: string;
+      notes: string;
+    } = { reference: '', amount: null, bank: '', date: '', confidence: 0, verdict: 'pending', notes: '' };
+
+    if (data.imageDataUrl) {
+      try {
+        const { analyzeReceiptImage, judgeReceipt } = await import('@/lib/fulfillment.server');
+        const analysis = await analyzeReceiptImage(data.imageDataUrl);
+        const judged = judgeReceipt(analysis, data.amountNio);
+        ai = {
+          reference: analysis.reference ?? '',
+          amount: analysis.amount,
+          bank: analysis.bank ?? '',
+          date: analysis.date ?? '',
+          confidence: analysis.confidence,
+          verdict: judged.verdict,
+          notes: judged.reason || analysis.notes,
+        };
+      } catch (e) {
+        console.error('[topup-receipt-ai]', e);
+        ai.verdict = 'error';
+        ai.notes = 'No se pudo analizar el comprobante automáticamente.';
+      }
+    }
+
+    // Detecta referencias repetidas también cuando el cliente no la escribió.
+    const detectedRef = (data.reference.trim() || ai.reference).trim();
+    if (detectedRef) {
+      const { data: dupAi } = await supabaseAdmin
+        .from('topup_requests')
+        .select('id')
+        .eq('status', 'approved')
+        .or(`reference.ilike.${detectedRef},ai_reference.ilike.${detectedRef}`)
+        .limit(1);
+      if (dupAi && dupAi.length > 0) {
+        throw new Error('Esa referencia de pago ya fue acreditada anteriormente.');
+      }
+    }
+
     const { data: row, error } = await supabaseAdmin
       .from('topup_requests')
       .insert({
@@ -117,6 +164,13 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         reference: data.reference.trim(),
         receipt_path: receiptPath,
         status: 'pending' as const,
+        ai_reference: ai.reference,
+        ai_amount_nio: ai.amount,
+        ai_bank: ai.bank,
+        ai_date: ai.date,
+        ai_confidence: ai.confidence,
+        ai_verdict: ai.verdict,
+        ai_notes: ai.notes,
       })
       .select('id, status, amount_nio')
       .single();
@@ -136,11 +190,23 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         `Método: ${data.methodName || data.method.toUpperCase()}`,
         `Referencia: ${data.reference.trim() || '—'}`,
         `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
+        ...(receiptPath
+          ? [
+              '',
+              '🤖 <b>Lectura IA del comprobante</b>',
+              `Referencia detectada: ${ai.reference || '—'}`,
+              `Monto detectado: ${ai.amount != null ? `C$ ${ai.amount}` : '—'}`,
+              `Banco: ${ai.bank || '—'} · Fecha: ${ai.date || '—'}`,
+              `Confianza: ${Math.round(ai.confidence * 100)}% · Veredicto: ${ai.verdict}`,
+              ai.notes ? `Nota: ${ai.notes}` : '',
+            ].filter(Boolean)
+          : []),
         '',
         'Apruébala o recházala aquí mismo con los botones.',
       ].join('\n'),
       topupKeyboard(row.id),
     );
+
 
     return row;
   });
