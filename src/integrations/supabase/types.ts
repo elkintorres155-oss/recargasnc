@@ -275,13 +275,6 @@ export type Database = {
       }
       topup_requests: {
         Row: {
-          ai_amount_nio: number | null
-          ai_bank: string
-          ai_confidence: number
-          ai_date: string
-          ai_notes: string
-          ai_reference: string
-          ai_verdict: string
           amount_nio: number
           auto_source: string
           created_at: string
@@ -299,13 +292,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          ai_amount_nio?: number | null
-          ai_bank?: string
-          ai_confidence?: number
-          ai_date?: string
-          ai_notes?: string
-          ai_reference?: string
-          ai_verdict?: string
           amount_nio: number
           auto_source?: string
           created_at?: string
@@ -323,13 +309,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          ai_amount_nio?: number | null
-          ai_bank?: string
-          ai_confidence?: number
-          ai_date?: string
-          ai_notes?: string
-          ai_reference?: string
-          ai_verdict?: string
           amount_nio?: number
           auto_source?: string
           created_at?: string

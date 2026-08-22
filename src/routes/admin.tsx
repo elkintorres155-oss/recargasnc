@@ -6,8 +6,6 @@ import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
-import { useIsAdmin } from "@/lib/use-is-admin";
-
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -110,41 +108,12 @@ function ImagePicker({ value, onChange }: { value: string; onChange: (v: string)
 
 function AdminPage() {
   const { settings, setSettings, categories, saving, saveError } = useStore();
-  const { loading: checkingRole, isAdmin } = useIsAdmin();
   const [pin, setPin] = useState("");
   const [ok, setOk] = useState(false);
   const [cat, setCat] = useState(0);
   const [tab, setTab] = useState<TabId>("general");
 
-  if (checkingRole) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4 text-sm text-muted-foreground">
-        Verificando acceso…
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-3xl border border-border bg-card/70 p-6 text-center">
-          <h1 className="text-xl font-extrabold">Acceso restringido</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Este panel es exclusivo para la cuenta administradora de la tienda.
-          </p>
-          <Link
-            to="/"
-            className="mt-4 block text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            ← Volver a la tienda
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   if (!ok) {
-
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-3xl border border-border bg-card/70 p-6 text-center">

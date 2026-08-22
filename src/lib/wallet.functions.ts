@@ -107,85 +107,20 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       if (uploadError) throw new Error(uploadError.message);
     }
 
-    // La IA lee el comprobante y extrae la REFERENCIA (y monto/banco/fecha)
-    // para que la revisión manual sea más rápida. Nunca acredita saldo sola.
-    let ai: {
-      reference: string;
-      amount: number | null;
-      bank: string;
-      date: string;
-      confidence: number;
-      verdict: string;
-      notes: string;
-    } = { reference: '', amount: null, bank: '', date: '', confidence: 0, verdict: 'pending', notes: '' };
-
-    if (data.imageDataUrl) {
-      try {
-        const { analyzeReceiptImage, judgeReceipt } = await import('@/lib/fulfillment.server');
-        const analysis = await analyzeReceiptImage(data.imageDataUrl);
-        const judged = judgeReceipt(analysis, data.amountNio);
-        ai = {
-          reference: analysis.reference ?? '',
-          amount: analysis.amount,
-          bank: analysis.bank ?? '',
-          date: analysis.date ?? '',
-          confidence: analysis.confidence,
-          verdict: judged.verdict,
-          notes: judged.reason || analysis.notes,
-        };
-      } catch (e) {
-        console.error('[topup-receipt-ai]', e);
-        ai.verdict = 'error';
-        ai.notes = 'No se pudo analizar el comprobante automáticamente.';
-      }
-    }
-
-    // Detecta referencias repetidas también cuando el cliente no la escribió.
-    const detectedRef = (data.reference.trim() || ai.reference).trim();
-    if (detectedRef) {
-      const { data: dupAi } = await supabaseAdmin
-        .from('topup_requests')
-        .select('id')
-        .eq('status', 'approved')
-        .or(`reference.ilike.${detectedRef},ai_reference.ilike.${detectedRef}`)
-        .limit(1);
-      if (dupAi && dupAi.length > 0) {
-        throw new Error('Esa referencia de pago ya fue acreditada anteriormente.');
-      }
-    }
-
-    // El saldo a acreditar es SIEMPRE el monto real leído en el comprobante.
-    // Si el cliente escribió 100 pero pagó 35, se acreditan 35.
-    const detectedAmount =
-      ai.amount != null && ai.amount > 0 && ai.confidence >= 0.5 ? Number(ai.amount) : null;
-    const effectiveAmount = detectedAmount ?? data.amountNio;
-    const amountMismatch =
-      detectedAmount != null && Math.abs(detectedAmount - data.amountNio) >= 0.01;
-
     const { data: row, error } = await supabaseAdmin
       .from('topup_requests')
       .insert({
         user_id: userId,
         method_code: data.method,
         method_name: data.methodName || data.method.toUpperCase(),
-        amount_nio: effectiveAmount,
+        amount_nio: data.amountNio,
         reference: data.reference.trim(),
         receipt_path: receiptPath,
         status: 'pending' as const,
-        ai_reference: ai.reference,
-        ai_amount_nio: ai.amount,
-        ai_bank: ai.bank,
-        ai_date: ai.date,
-        ai_confidence: ai.confidence,
-        ai_verdict: ai.verdict,
-        ai_notes: amountMismatch
-          ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}. ${ai.notes}`.trim()
-          : ai.notes,
       })
       .select('id, status, amount_nio')
       .single();
     if (error) throw new Error(error.message);
-
 
     const { notifyAdminTelegram, topupKeyboard } = await import('@/lib/telegram.server');
     const { data: prof } = await supabaseAdmin
@@ -197,27 +132,15 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       [
         '💰 <b>Nueva solicitud de recarga de saldo</b>',
         `Cliente: ${prof?.full_name || prof?.email || userId}`,
-        `Monto a acreditar: C$ ${effectiveAmount}${amountMismatch ? ` (el cliente declaró C$ ${data.amountNio})` : ''}`,
+        `Monto: C$ ${data.amountNio}`,
         `Método: ${data.methodName || data.method.toUpperCase()}`,
         `Referencia: ${data.reference.trim() || '—'}`,
         `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
-        ...(receiptPath
-          ? [
-              '',
-              '🤖 <b>Lectura IA del comprobante</b>',
-              `Referencia detectada: ${ai.reference || '—'}`,
-              `Monto detectado: ${ai.amount != null ? `C$ ${ai.amount}` : '—'}`,
-              `Banco: ${ai.bank || '—'} · Fecha: ${ai.date || '—'}`,
-              `Confianza: ${Math.round(ai.confidence * 100)}% · Veredicto: ${ai.verdict}`,
-              ai.notes ? `Nota: ${ai.notes}` : '',
-            ].filter(Boolean)
-          : []),
         '',
         'Apruébala o recházala aquí mismo con los botones.',
       ].join('\n'),
       topupKeyboard(row.id),
     );
-
 
     return row;
   });

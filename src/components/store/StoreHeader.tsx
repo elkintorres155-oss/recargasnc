@@ -1,20 +1,17 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useStore } from "@/lib/store-state";
-import { useIsAdmin } from "@/lib/use-is-admin";
 
 export function StoreHeader() {
   const { settings } = useStore();
-  const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
 
   const links: Array<{ label: string; to: "/" | "/admin" | "/saldo"; hash?: string }> = [
     { label: "Inicio", to: "/" },
     { label: "Catálogo", to: "/", hash: "catalogo" },
     { label: "Mi saldo", to: "/saldo" },
-    ...(isAdmin ? ([{ label: "Admin", to: "/admin" as const }]) : []),
+    { label: "Admin", to: "/admin" },
   ];
-
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-md">

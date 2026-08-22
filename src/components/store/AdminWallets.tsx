@@ -132,30 +132,6 @@ export function AdminWallets() {
                 {new Date(t.created_at).toLocaleString("es-NI")}
                 {t.reference ? ` · Ref: ${t.reference}` : ""}
               </p>
-              {t.receipt_path ? (
-                <div className="mt-2 rounded-xl border border-border/70 bg-card/60 p-3 text-xs">
-                  <p className="font-extrabold uppercase tracking-wide text-muted-foreground">
-                    🤖 Lectura IA del comprobante
-                  </p>
-                  <p className="mt-1">
-                    Referencia detectada:{" "}
-                    <span className="font-bold text-foreground">{t.ai_reference || "—"}</span>
-                  </p>
-                  <p>
-                    Monto detectado:{" "}
-                    <span className="font-bold">
-                      {t.ai_amount_nio != null ? formatC(Number(t.ai_amount_nio)) : "—"}
-                    </span>{" "}
-                    · Banco: {t.ai_bank || "—"} · Fecha: {t.ai_date || "—"}
-                  </p>
-                  <p className="text-muted-foreground">
-                    Confianza: {Math.round(Number(t.ai_confidence ?? 0) * 100)}% · Veredicto:{" "}
-                    {t.ai_verdict || "—"}
-                  </p>
-                  {t.ai_notes ? <p className="text-muted-foreground">Nota: {t.ai_notes}</p> : null}
-                </div>
-              ) : null}
-
               {t.receiptUrl ? (
                 <a
                   href={t.receiptUrl}
