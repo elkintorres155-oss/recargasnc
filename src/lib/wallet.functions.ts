@@ -154,13 +154,21 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       }
     }
 
+    // El saldo a acreditar es SIEMPRE el monto real leído en el comprobante.
+    // Si el cliente escribió 100 pero pagó 35, se acreditan 35.
+    const detectedAmount =
+      ai.amount != null && ai.amount > 0 && ai.confidence >= 0.5 ? Number(ai.amount) : null;
+    const effectiveAmount = detectedAmount ?? data.amountNio;
+    const amountMismatch =
+      detectedAmount != null && Math.abs(detectedAmount - data.amountNio) >= 0.01;
+
     const { data: row, error } = await supabaseAdmin
       .from('topup_requests')
       .insert({
         user_id: userId,
         method_code: data.method,
         method_name: data.methodName || data.method.toUpperCase(),
-        amount_nio: data.amountNio,
+        amount_nio: effectiveAmount,
         reference: data.reference.trim(),
         receipt_path: receiptPath,
         status: 'pending' as const,
@@ -170,11 +178,14 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         ai_date: ai.date,
         ai_confidence: ai.confidence,
         ai_verdict: ai.verdict,
-        ai_notes: ai.notes,
+        ai_notes: amountMismatch
+          ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}. ${ai.notes}`.trim()
+          : ai.notes,
       })
       .select('id, status, amount_nio')
       .single();
     if (error) throw new Error(error.message);
+
 
     const { notifyAdminTelegram, topupKeyboard } = await import('@/lib/telegram.server');
     const { data: prof } = await supabaseAdmin
