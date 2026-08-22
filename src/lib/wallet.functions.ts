@@ -197,7 +197,7 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       [
         '💰 <b>Nueva solicitud de recarga de saldo</b>',
         `Cliente: ${prof?.full_name || prof?.email || userId}`,
-        `Monto: C$ ${data.amountNio}`,
+        `Monto a acreditar: C$ ${effectiveAmount}${amountMismatch ? ` (el cliente declaró C$ ${data.amountNio})` : ''}`,
         `Método: ${data.methodName || data.method.toUpperCase()}`,
         `Referencia: ${data.reference.trim() || '—'}`,
         `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
