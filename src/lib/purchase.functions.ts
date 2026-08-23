@@ -24,6 +24,17 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     const { userId } = context;
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
 
+    // Existencias: si el paquete tiene stock limitado y está en cero, no se vende.
+    const { getPackStock, decrementPackStock } = await import('./stock.server');
+    const stock = await getPackStock(data.productId, data.packId);
+    if (stock !== null && stock <= 0) {
+      return {
+        ok: false as const,
+        insufficient: false as const,
+        message: 'Este paquete está agotado por el momento.',
+      };
+    }
+
     const { data: wallet } = await supabaseAdmin
       .from('wallets')
       .select('balance_nio')
