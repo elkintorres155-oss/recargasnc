@@ -198,39 +198,23 @@ function ProductPage() {
               1. Elige tu paquete
             </h2>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {base.packs.map((p) => {
-                const soldOut = typeof p.stock === "number" && p.stock <= 0;
-                const low = typeof p.stock === "number" && p.stock > 0 && p.stock <= 5;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    disabled={soldOut}
-                    onClick={() => setPackId(p.id)}
-                    className={`rounded-2xl border p-3 text-left transition-colors ${
-                      soldOut
-                        ? "cursor-not-allowed border-border bg-card/40 opacity-50"
-                        : p.id === pack?.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-card/70 hover:border-primary/50"
-                    }`}
-                  >
-                    <span className="block text-sm font-bold">{p.label}</span>
-                    <span className="mt-1 block text-sm font-extrabold text-primary">
-                      {formatC(p.price)}
-                    </span>
-                    {soldOut ? (
-                      <span className="mt-1 block text-[11px] font-bold text-destructive">
-                        Agotado
-                      </span>
-                    ) : low ? (
-                      <span className="mt-1 block text-[11px] font-bold text-muted-foreground">
-                        Quedan {p.stock}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
+              {base.packs.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPackId(p.id)}
+                  className={`rounded-2xl border p-3 text-left transition-colors ${
+                    p.id === pack?.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-card/70 hover:border-primary/50"
+                  }`}
+                >
+                  <span className="block text-sm font-bold">{p.label}</span>
+                  <span className="mt-1 block text-sm font-extrabold text-primary">
+                    {formatC(p.price)}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {base.needsId ? (
@@ -299,15 +283,11 @@ function ProductPage() {
               </div>
               <button
                 type="button"
-                disabled={busy || (typeof pack?.stock === "number" && pack.stock <= 0)}
+                disabled={busy}
                 onClick={payWithBalance}
                 className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
-                {typeof pack?.stock === "number" && pack.stock <= 0
-                  ? "Agotado"
-                  : busy
-                    ? "Procesando..."
-                    : "Pagar con mi saldo"}
+                {busy ? "Procesando..." : "Pagar con mi saldo"}
               </button>
               <button
                 type="button"

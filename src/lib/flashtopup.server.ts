@@ -122,9 +122,6 @@ async function doRequest(
     'X-FT-Timestamp': timestamp,
     'X-FT-Nonce': nonce,
     'X-FT-Signature': signature,
-    // Modo de pruebas: el proveedor no descuenta saldo real.
-    // Para desactivarlo, define TOPUP_SANDBOX=false.
-    ...(process.env['TOPUP_SANDBOX'] === 'false' ? {} : { 'X-FT-Sandbox': 'true' }),
   };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
 

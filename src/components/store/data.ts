@@ -10,8 +10,6 @@ export type Pack = {
   label: string;
   price: number; // córdobas (NIO)
   sku?: string; // código/SKU del proveedor (ej. FlashTopUp)
-  /** Existencias disponibles. Vacío/null = ilimitado, 0 = agotado. */
-  stock?: number | null;
 };
 
 export type Product = {
