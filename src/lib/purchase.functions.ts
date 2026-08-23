@@ -116,6 +116,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
           status_reason: dispatch.message,
         })
         .eq('id', order.id);
+      await decrementPackStock(data.productId, data.packId);
       return {
         ok: true as const,
         orderCode: order.order_code,
