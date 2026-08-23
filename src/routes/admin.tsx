@@ -595,6 +595,25 @@ function AdminPage() {
                             placeholder="SKU proveedor"
                             className={inputCls}
                           />
+                          <input
+                            type="number"
+                            min={0}
+                            value={k.stock ?? ""}
+                            onChange={(e) =>
+                              patchPack(cat, pi, ki, {
+                                stock: e.target.value === "" ? null : Number(e.target.value),
+                              })
+                            }
+                            placeholder="Stock (vacío = ilimitado)"
+                            className={inputCls}
+                          />
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            {typeof k.stock === "number"
+                              ? k.stock > 0
+                                ? `${k.stock} disponibles`
+                                : "Agotado"
+                              : "Stock ilimitado"}
+                          </p>
                           <button
                             type="button"
                             onClick={() =>
