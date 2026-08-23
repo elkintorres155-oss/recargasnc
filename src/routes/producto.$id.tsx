@@ -299,11 +299,15 @@ function ProductPage() {
               </div>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || (typeof pack?.stock === "number" && pack.stock <= 0)}
                 onClick={payWithBalance}
                 className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
-                {busy ? "Procesando..." : "Pagar con mi saldo"}
+                {typeof pack?.stock === "number" && pack.stock <= 0
+                  ? "Agotado"
+                  : busy
+                    ? "Procesando..."
+                    : "Pagar con mi saldo"}
               </button>
               <button
                 type="button"
