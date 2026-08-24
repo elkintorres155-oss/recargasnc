@@ -199,10 +199,15 @@ function ProductPage() {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
     }
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setError("Ingresa tu número de teléfono (obligatorio).");
+      return;
+    }
     setError("");
     const msg = `Hola ${settings.storeName}! Quiero comprar:%0A• Producto: ${base.name}%0A• Paquete: ${pack.label}%0A• Precio: ${formatC(pack.price)}${
       base.needsId ? `%0A• ID de jugador: ${playerId}` : ""
-    }`;
+    }%0A• Mi teléfono: ${cleanPhone}`;
     window.open(`https://wa.me/${settings.whatsapp}?text=${msg}`, "_blank");
   };
 
