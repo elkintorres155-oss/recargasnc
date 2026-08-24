@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyWallet } from "@/lib/wallet.functions";
+import { getMyPhone } from "@/lib/profile.functions";
 import { purchaseWithBalance } from "@/lib/purchase.functions";
 import { checkPlayerId } from "@/lib/provider.functions";
 import { useSessionState } from "@/hooks/use-session";
@@ -38,6 +39,9 @@ function ProductPage() {
 
   const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [confirmLink, setConfirmLink] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
@@ -57,6 +61,17 @@ function ProductPage() {
     retry: false,
     enabled: session === "signed-in",
   });
+  const fetchPhone = useServerFn(getMyPhone);
+  const profilePhone = useQuery({
+    queryKey: ["profile-phone"],
+    queryFn: () => fetchPhone(),
+    retry: false,
+    enabled: session === "signed-in",
+  });
+  useEffect(() => {
+    if (!phoneTouched && profilePhone.data?.phone) setPhone(profilePhone.data.phone);
+  }, [profilePhone.data?.phone, phoneTouched]);
+
 
   if (!base) {
     return (
@@ -76,16 +91,25 @@ function ProductPage() {
   }
 
   const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
+  const cleanPhone = phone.replace(/[^\d]/g, "");
+  const phoneValid = cleanPhone.length >= 8;
+  const waNumber = cleanPhone.length === 8 ? `505${cleanPhone}` : cleanPhone;
 
   const payWithBalance = async () => {
     setError("");
     setResult("");
+    setConfirmLink("");
     if (!pack) {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
     }
     if (base.needsId && !playerId.trim()) {
       setError("Ingresa tu ID de jugador para continuar.");
+      return;
+    }
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setError("Ingresa tu número de teléfono (obligatorio).");
       return;
     }
     if (session !== "signed-in") {
@@ -102,16 +126,32 @@ function ProductPage() {
           packLabel: pack.label,
           packSku: pack.sku ?? "",
           playerId: playerId.trim(),
+          customerPhone: cleanPhone,
           amountNio: pack.price,
         },
       });
       await qc.invalidateQueries({ queryKey: ["wallet"] });
+      await qc.invalidateQueries({ queryKey: ["profile-phone"] });
       if (!res.ok && "insufficient" in res && res.insufficient) {
         setError(`Saldo insuficiente. Te faltan ${formatC(res.missing)} para completar esta compra.`);
       } else if (!res.ok) {
         setError(res.message);
       } else {
         setResult(`¡Listo! Orden ${res.orderCode}. ${res.message}`);
+        const imageUrl = base.image.startsWith("http")
+          ? base.image
+          : `${window.location.origin}${base.image}`;
+        const text = encodeURIComponent(
+          `✅ ¡Tu recarga fue realizada correctamente!\n\n` +
+            `• Producto: ${base.name}\n` +
+            `• Paquete: ${pack.label}\n` +
+            `• Total: ${formatC(pack.price)}\n` +
+            (base.needsId ? `• ID de jugador: ${playerId.trim()}\n` : "") +
+            `• Orden: ${res.orderCode}\n\n` +
+            `Imagen del paquete: ${imageUrl}\n\n` +
+            `Gracias por comprar en ${settings.storeName}.`,
+        );
+        setConfirmLink(`https://wa.me/${waNumber}?text=${text}`);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
@@ -159,10 +199,15 @@ function ProductPage() {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
     }
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setError("Ingresa tu número de teléfono (obligatorio).");
+      return;
+    }
     setError("");
     const msg = `Hola ${settings.storeName}! Quiero comprar:%0A• Producto: ${base.name}%0A• Paquete: ${pack.label}%0A• Precio: ${formatC(pack.price)}${
       base.needsId ? `%0A• ID de jugador: ${playerId}` : ""
-    }`;
+    }%0A• Mi teléfono: ${cleanPhone}`;
     window.open(`https://wa.me/${settings.whatsapp}?text=${msg}`, "_blank");
   };
 
@@ -246,6 +291,30 @@ function ProductPage() {
               </>
             ) : null}
 
+            <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">
+              {base.needsId ? "3." : "2."} Tu número de teléfono{" "}
+              <span className="text-destructive">*</span>
+            </h2>
+            <input
+              value={phone}
+              inputMode="tel"
+              required
+              onChange={(e) => {
+                setPhoneTouched(true);
+                setPhone(e.target.value);
+              }}
+              placeholder="Ej: 8888 8888"
+              className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Obligatorio: ahí te confirmamos tu recarga por WhatsApp.
+            </p>
+            {phoneTouched && !phoneValid ? (
+              <p className="mt-1 text-xs font-semibold text-destructive">
+                Ingresa un número válido (mínimo 8 dígitos).
+              </p>
+            ) : null}
+
             {error ? <p className="mt-4 text-sm font-semibold text-destructive">{error}</p> : null}
 
             {wallet.data ? (
@@ -271,7 +340,34 @@ function ProductPage() {
             ) : null}
 
             {result ? (
-              <p className="mt-4 text-sm font-semibold text-primary">{result}</p>
+              <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
+                <p className="text-sm font-semibold text-primary">{result}</p>
+                {confirmLink ? (
+                  <>
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={base.image}
+                        alt={`${base.name} — ${pack?.label ?? ""}`}
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 rounded-xl object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-bold">{base.name}</p>
+                        <p className="text-xs text-muted-foreground">{pack?.label}</p>
+                      </div>
+                    </div>
+                    <a
+                      href={confirmLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-block rounded-full bg-primary px-5 py-2 text-xs font-extrabold text-primary-foreground"
+                    >
+                      Enviar confirmación por WhatsApp
+                    </a>
+                  </>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/70 p-4">

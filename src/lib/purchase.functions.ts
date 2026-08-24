@@ -9,6 +9,7 @@ const purchaseSchema = z.object({
   packLabel: z.string().max(120).default(''),
   packSku: z.string().max(120).default(''),
   playerId: z.string().max(80).default(''),
+  customerPhone: z.string().trim().min(8, 'Número de teléfono inválido').max(20),
   amountNio: z.number().positive().max(500000),
 });
 
@@ -50,6 +51,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         pack_label: data.packLabel,
         pack_sku: data.packSku,
         player_id: data.playerId,
+        customer_phone: data.customerPhone,
         amount_nio: data.amountNio,
         payment_method_code: 'balance',
         paid_with_balance: true,
@@ -58,6 +60,10 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       .select('id, order_code')
       .single();
     if (orderError) throw new Error(orderError.message);
+
+    // Guardamos el teléfono en el perfil para autocompletarlo la próxima vez
+    await supabaseAdmin.from('profiles').update({ phone: data.customerPhone }).eq('id', userId);
+
 
     // Descuento atómico (falla si el saldo bajó entre medio)
     const { error: debitError } = await supabaseAdmin.rpc('apply_wallet_transaction', {
