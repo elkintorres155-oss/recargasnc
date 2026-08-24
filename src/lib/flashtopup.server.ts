@@ -104,6 +104,21 @@ async function sendThroughProxyOrDirect(
   });
 }
 
+/** Lee el interruptor de modo pruebas guardado en la configuración de la tienda. */
+async function isSandboxEnabled(): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data } = await supabaseAdmin
+      .from('store_settings')
+      .select('data')
+      .eq('id', 'default')
+      .maybeSingle();
+    return Boolean((data?.data as { sandbox?: boolean } | null)?.sandbox);
+  } catch {
+    return false;
+  }
+}
+
 async function doRequest(
   method: 'GET' | 'POST',
   fullUrl: string,
@@ -124,6 +139,7 @@ async function doRequest(
     'X-FT-Signature': signature,
   };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
+  if (await isSandboxEnabled()) headers['X-FT-Sandbox'] = 'true';
 
   const res = await sendThroughProxyOrDirect(fullUrl, method, headers, bodyStr);
 
