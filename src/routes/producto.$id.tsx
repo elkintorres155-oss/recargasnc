@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyWallet } from "@/lib/wallet.functions";
+import { getMyPhone } from "@/lib/profile.functions";
 import { purchaseWithBalance } from "@/lib/purchase.functions";
 import { checkPlayerId } from "@/lib/provider.functions";
 import { useSessionState } from "@/hooks/use-session";
