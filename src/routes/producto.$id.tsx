@@ -39,6 +39,9 @@ function ProductPage() {
 
   const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [confirmLink, setConfirmLink] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
