@@ -286,6 +286,30 @@ function ProductPage() {
               </>
             ) : null}
 
+            <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">
+              {base.needsId ? "3." : "2."} Tu número de teléfono{" "}
+              <span className="text-destructive">*</span>
+            </h2>
+            <input
+              value={phone}
+              inputMode="tel"
+              required
+              onChange={(e) => {
+                setPhoneTouched(true);
+                setPhone(e.target.value);
+              }}
+              placeholder="Ej: 8888 8888"
+              className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Obligatorio: ahí te confirmamos tu recarga por WhatsApp.
+            </p>
+            {phoneTouched && !phoneValid ? (
+              <p className="mt-1 text-xs font-semibold text-destructive">
+                Ingresa un número válido (mínimo 8 dígitos).
+              </p>
+            ) : null}
+
             {error ? <p className="mt-4 text-sm font-semibold text-destructive">{error}</p> : null}
 
             {wallet.data ? (
