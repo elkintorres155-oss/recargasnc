@@ -9,6 +9,7 @@ const purchaseSchema = z.object({
   packLabel: z.string().max(120).default(''),
   packSku: z.string().max(120).default(''),
   playerId: z.string().max(80).default(''),
+  customerPhone: z.string().trim().min(8, 'Número de teléfono inválido').max(20),
   amountNio: z.number().positive().max(500000),
 });
 
