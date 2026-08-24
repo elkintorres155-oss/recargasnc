@@ -61,6 +61,17 @@ function ProductPage() {
     retry: false,
     enabled: session === "signed-in",
   });
+  const fetchPhone = useServerFn(getMyPhone);
+  const profilePhone = useQuery({
+    queryKey: ["profile-phone"],
+    queryFn: () => fetchPhone(),
+    retry: false,
+    enabled: session === "signed-in",
+  });
+  useEffect(() => {
+    if (!phoneTouched && profilePhone.data?.phone) setPhone(profilePhone.data.phone);
+  }, [profilePhone.data?.phone, phoneTouched]);
+
 
   if (!base) {
     return (
