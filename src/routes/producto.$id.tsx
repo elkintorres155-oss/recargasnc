@@ -335,7 +335,34 @@ function ProductPage() {
             ) : null}
 
             {result ? (
-              <p className="mt-4 text-sm font-semibold text-primary">{result}</p>
+              <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
+                <p className="text-sm font-semibold text-primary">{result}</p>
+                {confirmLink ? (
+                  <>
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={base.image}
+                        alt={`${base.name} — ${pack?.label ?? ""}`}
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 rounded-xl object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-bold">{base.name}</p>
+                        <p className="text-xs text-muted-foreground">{pack?.label}</p>
+                      </div>
+                    </div>
+                    <a
+                      href={confirmLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-block rounded-full bg-primary px-5 py-2 text-xs font-extrabold text-primary-foreground"
+                    >
+                      Enviar confirmación por WhatsApp
+                    </a>
+                  </>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card/70 p-4">
