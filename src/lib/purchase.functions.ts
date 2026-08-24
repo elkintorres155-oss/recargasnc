@@ -61,6 +61,10 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       .single();
     if (orderError) throw new Error(orderError.message);
 
+    // Guardamos el teléfono en el perfil para autocompletarlo la próxima vez
+    await supabaseAdmin.from('profiles').update({ phone: data.customerPhone }).eq('id', userId);
+
+
     // Descuento atómico (falla si el saldo bajó entre medio)
     const { error: debitError } = await supabaseAdmin.rpc('apply_wallet_transaction', {
       _user_id: userId,
