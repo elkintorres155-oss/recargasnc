@@ -283,7 +283,30 @@ function AdminPage() {
               />
               Mostrar aviso promocional
             </label>
+            <div className="sm:col-span-2 rounded-2xl border border-border bg-background/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold">Modo pruebas del proveedor (sandbox)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Activado: las recargas se envían con <code>X-FT-Sandbox</code> y no descuentan
+                    saldo real del proveedor.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => update({ sandbox: !settings.sandbox })}
+                  className={`rounded-full px-5 py-2 text-xs font-extrabold ${
+                    settings.sandbox
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {settings.sandbox ? "Sandbox ACTIVO" : "Sandbox apagado"}
+                </button>
+              </div>
+            </div>
           </div>
+
         </section>
 
         <section
