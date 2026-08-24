@@ -91,16 +91,25 @@ function ProductPage() {
   }
 
   const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
+  const cleanPhone = phone.replace(/[^\d]/g, "");
+  const phoneValid = cleanPhone.length >= 8;
+  const waNumber = cleanPhone.length === 8 ? `505${cleanPhone}` : cleanPhone;
 
   const payWithBalance = async () => {
     setError("");
     setResult("");
+    setConfirmLink("");
     if (!pack) {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
     }
     if (base.needsId && !playerId.trim()) {
       setError("Ingresa tu ID de jugador para continuar.");
+      return;
+    }
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setError("Ingresa tu número de teléfono (obligatorio).");
       return;
     }
     if (session !== "signed-in") {
@@ -117,16 +126,32 @@ function ProductPage() {
           packLabel: pack.label,
           packSku: pack.sku ?? "",
           playerId: playerId.trim(),
+          customerPhone: cleanPhone,
           amountNio: pack.price,
         },
       });
       await qc.invalidateQueries({ queryKey: ["wallet"] });
+      await qc.invalidateQueries({ queryKey: ["profile-phone"] });
       if (!res.ok && "insufficient" in res && res.insufficient) {
         setError(`Saldo insuficiente. Te faltan ${formatC(res.missing)} para completar esta compra.`);
       } else if (!res.ok) {
         setError(res.message);
       } else {
         setResult(`¡Listo! Orden ${res.orderCode}. ${res.message}`);
+        const imageUrl = base.image.startsWith("http")
+          ? base.image
+          : `${window.location.origin}${base.image}`;
+        const text = encodeURIComponent(
+          `✅ ¡Tu recarga fue realizada correctamente!\n\n` +
+            `• Producto: ${base.name}\n` +
+            `• Paquete: ${pack.label}\n` +
+            `• Total: ${formatC(pack.price)}\n` +
+            (base.needsId ? `• ID de jugador: ${playerId.trim()}\n` : "") +
+            `• Orden: ${res.orderCode}\n\n` +
+            `Imagen del paquete: ${imageUrl}\n\n` +
+            `Gracias por comprar en ${settings.storeName}.`,
+        );
+        setConfirmLink(`https://wa.me/${waNumber}?text=${text}`);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
