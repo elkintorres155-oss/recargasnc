@@ -51,6 +51,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         pack_label: data.packLabel,
         pack_sku: data.packSku,
         player_id: data.playerId,
+        customer_phone: data.customerPhone,
         amount_nio: data.amountNio,
         payment_method_code: 'balance',
         paid_with_balance: true,
