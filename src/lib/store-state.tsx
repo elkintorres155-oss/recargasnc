@@ -17,6 +17,8 @@ export type StoreSettings = {
   whatsapp: string;
   promoText: string;
   showPromo: boolean;
+  /** modo pruebas del proveedor (X-FT-Sandbox) */
+  sandbox?: boolean;
   banks: Bank[];
   /** full editable catalog (seeded from base data) */
   catalog: Category[];
@@ -58,6 +60,7 @@ export const defaultSettings: StoreSettings = {
   whatsapp: "50588888888",
   promoText: "Recarga y podrías ganar diamantes totalmente GRATIS.",
   showPromo: true,
+  sandbox: false,
   banks: defaultBanks,
   catalog: baseCategories,
 };
