@@ -34,14 +34,13 @@ export const Route = createFileRoute("/producto/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const { settings, findItem } = useStore();
+  const { findItem } = useStore();
   const base = findItem(id);
 
   const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const [confirmLink, setConfirmLink] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
@@ -93,12 +92,10 @@ function ProductPage() {
   const pack = base.packs.find((p) => p.id === packId) ?? base.packs[0];
   const cleanPhone = phone.replace(/[^\d]/g, "");
   const phoneValid = cleanPhone.length >= 8;
-  const waNumber = cleanPhone.length === 8 ? `505${cleanPhone}` : cleanPhone;
 
   const payWithBalance = async () => {
     setError("");
     setResult("");
-    setConfirmLink("");
     if (!pack) {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
@@ -138,20 +135,6 @@ function ProductPage() {
         setError(res.message);
       } else {
         setResult(`¡Listo! Orden ${res.orderCode}. ${res.message}`);
-        const imageUrl = base.image.startsWith("http")
-          ? base.image
-          : `${window.location.origin}${base.image}`;
-        const text = encodeURIComponent(
-          `✅ ¡Tu recarga fue realizada correctamente!\n\n` +
-            `• Producto: ${base.name}\n` +
-            `• Paquete: ${pack.label}\n` +
-            `• Total: ${formatC(pack.price)}\n` +
-            (base.needsId ? `• ID de jugador: ${playerId.trim()}\n` : "") +
-            `• Orden: ${res.orderCode}\n\n` +
-            `Imagen del paquete: ${imageUrl}\n\n` +
-            `Gracias por comprar en ${settings.storeName}.`,
-        );
-        setConfirmLink(`https://wa.me/${waNumber}?text=${text}`);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
@@ -188,27 +171,6 @@ function ProductPage() {
     } finally {
       setChecking(false);
     }
-  };
-
-  const order = () => {
-    if (base.needsId && !playerId.trim()) {
-      setError("Ingresa tu ID de jugador para continuar.");
-      return;
-    }
-    if (!pack) {
-      setError("Este producto aún no tiene paquetes configurados.");
-      return;
-    }
-    if (!phoneValid) {
-      setPhoneTouched(true);
-      setError("Ingresa tu número de teléfono (obligatorio).");
-      return;
-    }
-    setError("");
-    const msg = `Hola ${settings.storeName}! Quiero comprar:%0A• Producto: ${base.name}%0A• Paquete: ${pack.label}%0A• Precio: ${formatC(pack.price)}${
-      base.needsId ? `%0A• ID de jugador: ${playerId}` : ""
-    }%0A• Mi teléfono: ${cleanPhone}`;
-    window.open(`https://wa.me/${settings.whatsapp}?text=${msg}`, "_blank");
   };
 
   return (
@@ -342,31 +304,6 @@ function ProductPage() {
             {result ? (
               <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
                 <p className="text-sm font-semibold text-primary">{result}</p>
-                {confirmLink ? (
-                  <>
-                    <div className="mt-3 flex items-center gap-3">
-                      <img
-                        src={base.image}
-                        alt={`${base.name} — ${pack?.label ?? ""}`}
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 rounded-xl object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-bold">{base.name}</p>
-                        <p className="text-xs text-muted-foreground">{pack?.label}</p>
-                      </div>
-                    </div>
-                    <a
-                      href={confirmLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-block rounded-full bg-primary px-5 py-2 text-xs font-extrabold text-primary-foreground"
-                    >
-                      Enviar confirmación por WhatsApp
-                    </a>
-                  </>
-                ) : null}
               </div>
             ) : null}
 
@@ -384,13 +321,6 @@ function ProductPage() {
                 className="rounded-full bg-primary px-6 py-3 text-sm font-extrabold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {busy ? "Procesando..." : "Pagar con mi saldo"}
-              </button>
-              <button
-                type="button"
-                onClick={order}
-                className="rounded-full border border-border px-6 py-3 text-sm font-extrabold text-muted-foreground hover:text-foreground"
-              >
-                Comprar por WhatsApp
               </button>
             </div>
 
