@@ -1,51 +1,53 @@
 /**
- * WhatsApp Cloud API (Meta) — envío de mensajes al cliente.
- * Requiere los secretos WHATSAPP_ACCESS_TOKEN y WHATSAPP_PHONE_NUMBER_ID.
- * Opcional: WHATSAPP_TEMPLATE_NAME / WHATSAPP_TEMPLATE_LANG para mensajes
- * fuera de la ventana de 24 horas.
+ * WhatsApp vía Twilio (gateway de conectores de Lovable).
+ * Requiere: conexión Twilio enlazada (TWILIO_API_KEY + LOVABLE_API_KEY)
+ * y el secreto TWILIO_WHATSAPP_FROM (ej: whatsapp:+14155238886 o +14155238886).
  */
 
-const GRAPH_VERSION = 'v21.0';
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/twilio';
 
-/** Normaliza un número nicaragüense a formato internacional sin "+". */
+/** Normaliza un número nicaragüense a formato E.164. */
 export function toWaNumber(raw: string): string {
   const digits = (raw || '').replace(/\D/g, '');
   if (!digits) return '';
-  if (digits.length === 8) return `505${digits}`;
-  return digits;
+  if (digits.length === 8) return `+505${digits}`;
+  return `+${digits}`;
+}
+
+function waChannel(raw: string): string {
+  const v = (raw || '').trim();
+  if (!v) return '';
+  return v.startsWith('whatsapp:') ? v : `whatsapp:${v.startsWith('+') ? v : `+${v.replace(/\D/g, '')}`}`;
 }
 
 type SendResult = { sent: boolean; message: string; id?: string | undefined };
 
-async function callGraph(body: Record<string, unknown>): Promise<SendResult> {
-  const token = process.env['WHATSAPP_ACCESS_TOKEN'];
-  const phoneId = process.env['WHATSAPP_PHONE_NUMBER_ID'];
-  if (!token || !phoneId) {
-    return { sent: false, message: 'WhatsApp API no configurada.' };
-  }
+async function sendTwilioMessage(params: Record<string, string>): Promise<SendResult> {
+  const lovableKey = process.env['LOVABLE_API_KEY'];
+  const twilioKey = process.env['TWILIO_API_KEY'];
+  const from = process.env['TWILIO_WHATSAPP_FROM'];
+  if (!lovableKey || !twilioKey) return { sent: false, message: 'Twilio no está conectado.' };
+  if (!from) return { sent: false, message: 'Falta configurar TWILIO_WHATSAPP_FROM.' };
 
   try {
-    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${phoneId}/messages`, {
+    const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${lovableKey}`,
+        'X-Connection-Api-Key': twilioKey,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({ messaging_product: 'whatsapp', ...body }),
+      body: new URLSearchParams({ From: waChannel(from), ...params }),
     });
-    const json = (await res.json().catch(() => ({}))) as {
-      messages?: { id: string }[];
-      error?: { message?: string; code?: number };
-    };
+    const text = await res.text();
     if (!res.ok) {
-      return {
-        sent: false,
-        message: `WhatsApp (${res.status}): ${json.error?.message ?? 'error desconocido'}`,
-      };
+      console.error(`Twilio request failed [${res.status}]: ${text}`);
+      return { sent: false, message: `Twilio (${res.status}): ${text.slice(0, 300)}` };
     }
-    return { sent: true, message: 'Mensaje enviado por WhatsApp.', id: json.messages?.[0]?.id };
+    const json = JSON.parse(text) as { sid?: string };
+    return { sent: true, message: 'Mensaje enviado por WhatsApp.', id: json.sid };
   } catch (e) {
-    return { sent: false, message: e instanceof Error ? e.message : 'Error de red con WhatsApp.' };
+    return { sent: false, message: e instanceof Error ? e.message : 'Error de red con Twilio.' };
   }
 }
 
@@ -64,30 +66,7 @@ export async function sendTopupCompleted(input: TopupDoneMessage): Promise<SendR
   const to = toWaNumber(input.phone);
   if (!to) return { sent: false, message: 'Número de teléfono inválido.' };
 
-  const templateName = process.env['WHATSAPP_TEMPLATE_NAME'];
-  if (templateName) {
-    return callGraph({
-      to,
-      type: 'template',
-      template: {
-        name: templateName,
-        language: { code: process.env['WHATSAPP_TEMPLATE_LANG'] ?? 'es' },
-        components: [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: input.productName },
-              { type: 'text', text: input.packLabel },
-              { type: 'text', text: input.amountLabel },
-              { type: 'text', text: input.orderCode },
-            ],
-          },
-        ],
-      },
-    });
-  }
-
-  const caption =
+  const body =
     `✅ ¡Tu recarga fue realizada correctamente!\n\n` +
     `• Producto: ${input.productName}\n` +
     `• Paquete: ${input.packLabel}\n` +
@@ -96,14 +75,12 @@ export async function sendTopupCompleted(input: TopupDoneMessage): Promise<SendR
     `• Orden: ${input.orderCode}\n\n` +
     `¡Gracias por tu compra!`;
 
-  if (input.imageUrl?.startsWith('http')) {
-    const withImage = await callGraph({
-      to,
-      type: 'image',
-      image: { link: input.imageUrl, caption },
-    });
-    if (withImage.sent) return withImage;
-  }
+  const params: Record<string, string> = { To: waChannel(to), Body: body };
+  if (input.imageUrl?.startsWith('http')) params['MediaUrl'] = input.imageUrl;
 
-  return callGraph({ to, type: 'text', text: { body: caption, preview_url: false } });
+  const withMedia = await sendTwilioMessage(params);
+  if (withMedia.sent || !params['MediaUrl']) return withMedia;
+
+  // Si la imagen falla (URL no accesible), reintentamos solo con texto.
+  return sendTwilioMessage({ To: waChannel(to), Body: body });
 }
