@@ -15,7 +15,7 @@ export function toWaNumber(raw: string): string {
   return digits;
 }
 
-type SendResult = { sent: boolean; message: string; id?: string };
+type SendResult = { sent: boolean; message: string; id?: string | undefined };
 
 async function callGraph(body: Record<string, unknown>): Promise<SendResult> {
   const token = process.env['WHATSAPP_ACCESS_TOKEN'];
