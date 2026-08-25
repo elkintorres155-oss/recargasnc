@@ -11,6 +11,7 @@ const purchaseSchema = z.object({
   playerId: z.string().max(80).default(''),
   customerPhone: z.string().trim().min(8, 'Número de teléfono inválido').max(20),
   amountNio: z.number().positive().max(500000),
+  productImageUrl: z.string().max(500).default(''),
 });
 
 /**
@@ -103,6 +104,17 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     });
 
     if (dispatch.dispatched) {
+      const { sendTopupCompleted } = await import('./whatsapp.server');
+      const notify = await sendTopupCompleted({
+        phone: data.customerPhone,
+        productName: data.productName,
+        packLabel: data.packLabel,
+        amountLabel: `C$${data.amountNio.toFixed(2)}`,
+        orderCode: order.order_code,
+        playerId: data.playerId,
+        imageUrl: data.productImageUrl,
+      });
+
       await supabaseAdmin
         .from('orders')
         .update({
@@ -116,6 +128,8 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         orderCode: order.order_code,
         status: 'provider_processing',
         message: dispatch.message,
+        whatsapp: notify.sent,
+        whatsappMessage: notify.message,
       };
     }
 

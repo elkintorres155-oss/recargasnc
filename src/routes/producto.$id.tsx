@@ -125,6 +125,9 @@ function ProductPage() {
           playerId: playerId.trim(),
           customerPhone: cleanPhone,
           amountNio: pack.price,
+          productImageUrl: base.image.startsWith("http")
+            ? base.image
+            : `${window.location.origin}${base.image}`,
         },
       });
       await qc.invalidateQueries({ queryKey: ["wallet"] });
@@ -134,7 +137,12 @@ function ProductPage() {
       } else if (!res.ok) {
         setError(res.message);
       } else {
-        setResult(`¡Listo! Orden ${res.orderCode}. ${res.message}`);
+        setResult(
+          `¡Listo! Orden ${res.orderCode}. ${res.message}` +
+            (res.whatsapp
+              ? " Enviamos la confirmación por WhatsApp al número indicado."
+              : ` (WhatsApp: ${res.whatsappMessage})`),
+        );
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
