@@ -34,7 +34,7 @@ export const Route = createFileRoute("/producto/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const { settings, findItem } = useStore();
+  const { findItem } = useStore();
   const base = findItem(id);
 
   const [packId, setPackId] = useState<string | null>(null);
