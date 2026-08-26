@@ -139,9 +139,9 @@ function ProductPage() {
       } else {
         setResult(
           `¡Listo! Orden ${res.orderCode}. ${res.message}` +
-            (res.whatsapp
-              ? " Enviamos la confirmación por WhatsApp al número indicado."
-              : ` (WhatsApp: ${res.whatsappMessage})`),
+            (res.email
+              ? " Te enviamos la factura a tu correo."
+              : ` (Factura por correo: ${res.emailMessage})`),
         );
       }
     } catch (e) {
@@ -277,7 +277,8 @@ function ProductPage() {
               className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              Obligatorio: ahí te confirmamos tu recarga por WhatsApp.
+              Obligatorio: lo usamos si necesitamos contactarte sobre tu recarga. La factura llega
+              a tu correo.
             </p>
             {phoneTouched && !phoneValid ? (
               <p className="mt-1 text-xs font-semibold text-destructive">
