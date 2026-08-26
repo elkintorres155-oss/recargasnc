@@ -164,11 +164,21 @@ export async function dispatchToProvider(input: {
     const body = res.body as {
       data?: { order_id?: string; order_status?: string };
       order_id?: string;
+      order_status?: string;
+      status?: string;
+      success?: boolean;
       message?: string;
       error?: { message?: unknown; errors?: Array<{ message?: string }> };
     };
     const providerOrderId = body?.data?.order_id ?? body?.order_id ?? null;
-    if (!res.ok) {
+    const rawStatus = (body?.data?.order_status ?? body?.order_status ?? body?.status ?? '')
+      .toString()
+      .toLowerCase();
+    // Nunca declarar éxito si el proveedor reporta fallo, aunque responda HTTP 200.
+    const providerFailed =
+      ['failed', 'rejected', 'cancelled', 'canceled', 'error'].includes(rawStatus) ||
+      body?.success === false;
+    if (!res.ok || providerFailed) {
       const fieldErrors = Array.isArray(body?.error?.errors)
         ? body.error!.errors!.map((e) => e.message).filter(Boolean).join(' ')
         : '';
