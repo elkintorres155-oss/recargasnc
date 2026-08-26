@@ -104,16 +104,36 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
     });
 
     if (dispatch.dispatched) {
-      const { sendTopupCompleted } = await import('./whatsapp.server');
-      const notify = await sendTopupCompleted({
-        phone: data.customerPhone,
-        productName: data.productName,
-        packLabel: data.packLabel,
-        amountLabel: `C$${data.amountNio.toFixed(2)}`,
-        orderCode: order.order_code,
-        playerId: data.playerId,
-        imageUrl: data.productImageUrl,
-      });
+      // Factura de agradecimiento al correo del cliente (su Gmail registrado)
+      let emailSent = false;
+      let emailNote = 'Tu cuenta no tiene correo registrado.';
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+        const email = authUser.user?.email;
+        if (email) {
+          const { sendTemplateEmail } = await import('./email-templates/send-email');
+          const res = await sendTemplateEmail('topup-receipt', email, {
+            templateData: {
+              orderCode: order.order_code,
+              productName: data.productName,
+              packLabel: data.packLabel,
+              amountLabel: `C$${data.amountNio.toFixed(2)}`,
+              playerId: data.playerId,
+              phone: data.customerPhone,
+              imageUrl: data.productImageUrl,
+              date: new Date().toLocaleString('es-NI', { timeZone: 'America/Managua' }),
+            },
+            idempotencyKey: `topup-receipt-${order.id}`,
+          });
+          emailSent = res.sent;
+          emailNote = res.sent
+            ? 'Factura enviada a tu correo.'
+            : 'No enviamos la factura porque te diste de baja de los correos.';
+        }
+      } catch (e) {
+        console.error('Factura por correo falló:', e);
+        emailNote = e instanceof Error ? e.message : 'No se pudo enviar la factura.';
+      }
 
       await supabaseAdmin
         .from('orders')
@@ -128,8 +148,8 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         orderCode: order.order_code,
         status: 'provider_processing',
         message: dispatch.message,
-        whatsapp: notify.sent,
-        whatsappMessage: notify.message,
+        email: emailSent,
+        emailMessage: emailNote,
       };
     }
 
