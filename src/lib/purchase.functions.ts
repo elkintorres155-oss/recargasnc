@@ -140,14 +140,14 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         .update({
           status: 'provider_processing',
           provider_order_id: dispatch.providerOrderId,
-          status_reason: dispatch.message,
+          status_reason: 'Recarga aceptada y en proceso por el proveedor.',
         })
         .eq('id', order.id);
       return {
         ok: true as const,
         orderCode: order.order_code,
         status: 'provider_processing',
-        message: dispatch.message,
+        message: 'Tu recarga se realizó correctamente.',
         email: emailSent,
         emailMessage: emailNote,
       };
@@ -177,20 +177,23 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         ok: false as const,
         insufficient: false as const,
         orderCode: order.order_code,
-        message: `${dispatch.message} No pudimos devolver el saldo automáticamente, contáctanos con el código ${order.order_code}.`,
+        message: `No se pudo realizar la recarga y no pudimos devolver el saldo automáticamente. Contáctanos con el código ${order.order_code}.`,
       };
     }
 
     await supabaseAdmin
       .from('orders')
-      .update({ status: 'refunded', status_reason: `${dispatch.message} Saldo reembolsado.` })
+      .update({
+        status: 'refunded',
+        status_reason: `Pago cancelado y saldo reembolsado. Motivo: ${dispatch.message}`,
+      })
       .eq('id', order.id);
 
     return {
       ok: false as const,
       insufficient: false as const,
       orderCode: order.order_code,
-      message: `${dispatch.message} Te devolvimos el saldo.`,
+      message: 'No se pudo realizar la recarga. Tu pago fue cancelado y el saldo fue devuelto a tu billetera.',
     };
   });
 

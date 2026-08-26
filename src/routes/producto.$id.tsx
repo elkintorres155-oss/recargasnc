@@ -137,12 +137,7 @@ function ProductPage() {
       } else if (!res.ok) {
         setError(res.message);
       } else {
-        setResult(
-          `¡Listo! Orden ${res.orderCode}. ${res.message}` +
-            (res.email
-              ? " Te enviamos la factura a tu correo."
-              : ` (Factura por correo: ${res.emailMessage})`),
-        );
+        setResult("¡Listo! Tu recarga se realizó correctamente.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
