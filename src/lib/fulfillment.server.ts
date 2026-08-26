@@ -197,7 +197,7 @@ export async function dispatchToProvider(input: {
       return {
         dispatched: false,
         providerOrderId: null,
-        message: `El proveedor rechazó la recarga (${res.status})${providerError ? `: ${providerError}` : ''}. Se procesará manualmente.`,
+        message: `El proveedor rechazó la recarga (${res.status})${providerError ? `: ${providerError}` : ''}`,
       };
     }
 
