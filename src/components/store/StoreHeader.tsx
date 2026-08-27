@@ -20,9 +20,13 @@ export function StoreHeader() {
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link to="/" className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-secondary text-lg glow-ring">
-            💚
-          </span>
+          <img
+            src="/favicon.png"
+            alt={`Logo de ${settings.storeName}`}
+            width={40}
+            height={40}
+            className="size-10 rounded-xl glow-ring object-cover"
+          />
           <span className="leading-tight">
             <span className="block text-base font-extrabold tracking-tight">
               {settings.storeName.split(" ")[0]}{" "}
