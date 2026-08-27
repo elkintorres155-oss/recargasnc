@@ -255,6 +255,131 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_accounts: {
+        Row: {
+          assigned_at: string | null
+          assigned_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          notes: string
+          order_id: string | null
+          password: string
+          pin: string
+          profile: string
+          service: string
+          status: Database["public"]["Enums"]["stock_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string
+          order_id?: string | null
+          password?: string
+          pin?: string
+          profile?: string
+          service: string
+          status?: Database["public"]["Enums"]["stock_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string
+          order_id?: string | null
+          password?: string
+          pin?: string
+          profile?: string
+          service?: string
+          status?: Database["public"]["Enums"]["stock_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_accounts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          account_email: string
+          account_id: string | null
+          action: Database["public"]["Enums"]["stock_action"]
+          admin_id: string | null
+          created_at: string
+          id: string
+          note: string
+          order_code: string
+          order_id: string | null
+          product_name: string
+          service: string
+          status_after: Database["public"]["Enums"]["stock_status"] | null
+          status_before: Database["public"]["Enums"]["stock_status"] | null
+          user_id: string | null
+        }
+        Insert: {
+          account_email?: string
+          account_id?: string | null
+          action: Database["public"]["Enums"]["stock_action"]
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          order_code?: string
+          order_id?: string | null
+          product_name?: string
+          service?: string
+          status_after?: Database["public"]["Enums"]["stock_status"] | null
+          status_before?: Database["public"]["Enums"]["stock_status"] | null
+          user_id?: string | null
+        }
+        Update: {
+          account_email?: string
+          account_id?: string | null
+          action?: Database["public"]["Enums"]["stock_action"]
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          order_code?: string
+          order_id?: string | null
+          product_name?: string
+          service?: string
+          status_after?: Database["public"]["Enums"]["stock_status"] | null
+          status_before?: Database["public"]["Enums"]["stock_status"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "stock_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           data: Json
@@ -531,6 +656,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_stock_account: {
+        Args: {
+          _order_id: string
+          _product_name?: string
+          _service: string
+          _user_id: string
+        }
+        Returns: {
+          assigned_at: string | null
+          assigned_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          notes: string
+          order_id: string | null
+          password: string
+          pin: string
+          profile: string
+          service: string
+          status: Database["public"]["Enums"]["stock_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stock_accounts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -550,6 +705,13 @@ export type Database = {
         | "completed"
         | "failed"
         | "refunded"
+      stock_action:
+        | "created"
+        | "updated"
+        | "status_changed"
+        | "delivered"
+        | "deleted"
+      stock_status: "available" | "reserved" | "sold" | "suspended" | "expired"
       topup_status: "pending" | "approved" | "rejected" | "cancelled"
       wallet_tx_type: "topup" | "purchase" | "refund" | "bonus" | "adjustment"
     }
@@ -690,6 +852,14 @@ export const Constants = {
         "failed",
         "refunded",
       ],
+      stock_action: [
+        "created",
+        "updated",
+        "status_changed",
+        "delivered",
+        "deleted",
+      ],
+      stock_status: ["available", "reserved", "sold", "suspended", "expired"],
       topup_status: ["pending", "approved", "rejected", "cancelled"],
       wallet_tx_type: ["topup", "purchase", "refund", "bonus", "adjustment"],
     },
