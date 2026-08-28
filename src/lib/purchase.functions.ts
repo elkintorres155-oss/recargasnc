@@ -95,6 +95,88 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       .update({ status: 'payment_approved', status_reason: 'Pagado con saldo interno.' })
       .eq('id', order.id);
 
+    // ── Entrega con inventario de cuentas (streaming) ──────────────────────
+    const {
+      getStockPackConfig,
+      claimAccountForOrder,
+      notifyAccountDelivered,
+      notifyOutOfStock,
+    } = await import('./stock-delivery.server');
+    const stockCfg = await getStockPackConfig(data.productId, data.packId);
+
+    if (stockCfg.requiresStock) {
+      const account = await claimAccountForOrder({
+        service: stockCfg.service,
+        orderId: order.id,
+        userId,
+        productName: data.productName,
+      });
+
+      if (account) {
+        await supabaseAdmin
+          .from('orders')
+          .update({ status: 'completed', status_reason: 'Cuenta entregada automáticamente.' })
+          .eq('id', order.id);
+
+        let customerEmail = '';
+        try {
+          const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+          customerEmail = authUser.user?.email ?? '';
+        } catch {
+          /* sin correo */
+        }
+
+        await notifyAccountDelivered({
+          productName: data.productName,
+          packLabel: data.packLabel,
+          amountNio: data.amountNio,
+          orderCode: order.order_code,
+          account,
+          customerEmail,
+          customerPhone: data.customerPhone,
+        });
+
+        return {
+          ok: true as const,
+          orderCode: order.order_code,
+          status: 'completed',
+          message: 'Tu compra se realizó correctamente.',
+          account: {
+            service: account.service,
+            email: account.email,
+            password: account.password,
+            profile: account.profile,
+            pin: account.pin,
+            notes: account.notes,
+            expiresAt: account.expires_at,
+          },
+        };
+      }
+
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          status: 'payment_approved',
+          status_reason: 'Sin stock disponible. Entrega manual pendiente.',
+        })
+        .eq('id', order.id);
+
+      await notifyOutOfStock({
+        productName: data.productName,
+        packLabel: data.packLabel,
+        service: stockCfg.service,
+        orderCode: order.order_code,
+        customerPhone: data.customerPhone,
+      });
+
+      return {
+        ok: true as const,
+        orderCode: order.order_code,
+        status: 'payment_approved',
+        message: 'Tu pedido está en proceso, te lo entregamos en breve.',
+      };
+    }
+
     const { dispatchToProvider } = await import('./fulfillment.server');
     const dispatch = await dispatchToProvider({
       orderId: order.id,
