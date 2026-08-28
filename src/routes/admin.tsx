@@ -5,6 +5,7 @@ import { uploadCatalogImage } from "@/lib/settings.functions";
 import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
+import { AdminStock } from "@/components/store/AdminStock";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
@@ -37,6 +38,7 @@ const TABS = [
   { id: "pagos", label: "🏦 Métodos de pago" },
   { id: "catalogo", label: "🎮 Catálogo y precios" },
   { id: "saldos", label: "💰 Recargas de saldo" },
+  { id: "stock", label: "🎬 Stock de cuentas" },
   { id: "proveedor", label: "🔌 Proveedor" },
 ] as const;
 
@@ -618,6 +620,26 @@ function AdminPage() {
                             placeholder="SKU proveedor"
                             className={inputCls}
                           />
+                          <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold">
+                            <input
+                              type="checkbox"
+                              checked={!!k.requiresStock}
+                              onChange={(e) =>
+                                patchPack(cat, pi, ki, { requiresStock: e.target.checked })
+                              }
+                            />
+                            Requiere stock
+                          </label>
+                          {k.requiresStock ? (
+                            <input
+                              value={k.serviceSlug ?? ""}
+                              onChange={(e) =>
+                                patchPack(cat, pi, ki, { serviceSlug: e.target.value })
+                              }
+                              placeholder="Servicio (netflix)"
+                              className={inputCls}
+                            />
+                          ) : null}
                           <button
                             type="button"
                             onClick={() =>
@@ -681,6 +703,8 @@ function AdminPage() {
         </section>
 
         {tab === "saldos" ? <AdminWallets /> : null}
+
+        {tab === "stock" ? <AdminStock /> : null}
 
         {tab === "proveedor" ? <ProviderCatalog /> : null}
 
