@@ -220,7 +220,10 @@ export const updateStockAccount = createServerFn({ method: 'POST' })
     for (const [k, v] of Object.entries(rest)) if (v !== undefined) patch[k] = v;
     if (expiresAt !== undefined) patch['expires_at'] = expiresAt || null;
 
-    const { error } = await supabaseAdmin.from('stock_accounts').update(patch).eq('id', id);
+    const { error } = await supabaseAdmin
+      .from('stock_accounts')
+      .update(patch as never)
+      .eq('id', id);
     if (error) return { ok: false as const, message: error.message };
 
     await supabaseAdmin.from('stock_movements').insert({
