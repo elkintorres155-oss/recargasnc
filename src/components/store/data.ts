@@ -10,6 +10,8 @@ export type Pack = {
   label: string;
   price: number; // córdobas (NIO)
   sku?: string; // código/SKU del proveedor (ej. FlashTopUp)
+  requiresStock?: boolean; // se entrega con una cuenta del inventario
+  serviceSlug?: string; // servicio del inventario (netflix, spotify, disney...)
 };
 
 export type Product = {
