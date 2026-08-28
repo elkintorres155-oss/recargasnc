@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { getMyOrders } from "@/lib/orders.functions";
+import { myStockAccounts } from "@/lib/stock.functions";
 import { formatC } from "@/lib/store-state";
 import { STATUS_LABEL } from "@/lib/order-status";
 
@@ -30,9 +31,16 @@ export const Route = createFileRoute("/mis-pedidos")({
 
 function MyOrders() {
   const fetchOrders = useServerFn(getMyOrders);
+  const fetchAccounts = useServerFn(myStockAccounts);
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-orders"],
     queryFn: () => fetchOrders(),
+    retry: false,
+  });
+
+  const accounts = useQuery({
+    queryKey: ["my-stock-accounts"],
+    queryFn: () => fetchAccounts(),
     retry: false,
   });
 
@@ -76,6 +84,33 @@ function MyOrders() {
             <p className="text-sm text-muted-foreground">Aún no tienes pedidos.</p>
           ) : null}
         </div>
+
+        {(accounts.data?.accounts ?? []).length ? (
+          <section className="mt-10">
+            <h2 className="text-lg font-extrabold tracking-tight">Mis cuentas</h2>
+            <div className="mt-4 space-y-3">
+              {(accounts.data?.accounts ?? []).map((a) => (
+                <div key={a.id} className="rounded-2xl border border-primary/40 bg-card/70 p-4">
+                  <p className="font-bold capitalize">{a.service}</p>
+                  <p className="mt-1 text-sm">
+                    Correo: <span className="font-semibold">{a.email}</span>
+                  </p>
+                  <p className="text-sm">
+                    Contraseña: <span className="font-semibold">{a.password}</span>
+                  </p>
+                  {a.profile ? <p className="text-sm">Perfil: {a.profile}</p> : null}
+                  {a.pin ? <p className="text-sm">PIN: {a.pin}</p> : null}
+                  {a.expires_at ? (
+                    <p className="mt-1 text-xs text-muted-foreground">Vence: {a.expires_at}</p>
+                  ) : null}
+                  {a.notes ? (
+                    <p className="mt-1 text-xs text-muted-foreground">{a.notes}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <Link to="/" className="mt-8 inline-block text-sm font-bold text-primary">
           ← Volver al catálogo
