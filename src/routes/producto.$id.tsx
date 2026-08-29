@@ -147,7 +147,12 @@ function ProductPage() {
       } else if (!res.ok) {
         setError(res.message);
       } else {
-        setResult("¡Listo! Tu recarga se realizó correctamente.");
+        if ("account" in res && res.account) setAccount(res.account);
+        setResult(
+          "account" in res && res.account
+            ? "¡Listo! Tu compra se realizó correctamente."
+            : "¡Listo! Tu recarga se realizó correctamente.",
+        );
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
