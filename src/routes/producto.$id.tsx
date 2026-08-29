@@ -43,6 +43,15 @@ function ProductPage() {
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
+  const [account, setAccount] = useState<{
+    service: string;
+    email: string;
+    password: string;
+    profile: string;
+    pin: string;
+    notes: string;
+    expiresAt: string | null;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
   const [checkMsg, setCheckMsg] = useState("");
@@ -96,6 +105,7 @@ function ProductPage() {
   const payWithBalance = async () => {
     setError("");
     setResult("");
+    setAccount(null);
     if (!pack) {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
