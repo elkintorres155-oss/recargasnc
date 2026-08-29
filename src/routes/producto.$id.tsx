@@ -43,6 +43,15 @@ function ProductPage() {
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
+  const [account, setAccount] = useState<{
+    service: string;
+    email: string;
+    password: string;
+    profile: string;
+    pin: string;
+    notes: string;
+    expiresAt: string | null;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
   const [checkMsg, setCheckMsg] = useState("");
@@ -96,6 +105,7 @@ function ProductPage() {
   const payWithBalance = async () => {
     setError("");
     setResult("");
+    setAccount(null);
     if (!pack) {
       setError("Este producto aún no tiene paquetes configurados.");
       return;
@@ -137,7 +147,12 @@ function ProductPage() {
       } else if (!res.ok) {
         setError(res.message);
       } else {
-        setResult("¡Listo! Tu recarga se realizó correctamente.");
+        if ("account" in res && res.account) setAccount(res.account);
+        setResult(
+          "account" in res && res.account
+            ? "¡Listo! Tu compra se realizó correctamente."
+            : "¡Listo! Tu recarga se realizó correctamente.",
+        );
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo procesar la compra.");
@@ -308,6 +323,51 @@ function ProductPage() {
             {result ? (
               <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
                 <p className="text-sm font-semibold text-primary">{result}</p>
+                {account ? (
+                  <div className="mt-3 rounded-xl border border-border bg-card/80 p-4">
+                    <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                      Tu cuenta ({account.service})
+                    </p>
+                    <dl className="mt-2 space-y-1 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Correo</dt>
+                        <dd className="font-mono font-bold select-all">{account.email}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Contraseña</dt>
+                        <dd className="font-mono font-bold select-all">{account.password}</dd>
+                      </div>
+                      {account.profile ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Perfil</dt>
+                          <dd className="font-bold">{account.profile}</dd>
+                        </div>
+                      ) : null}
+                      {account.pin ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">PIN</dt>
+                          <dd className="font-mono font-bold select-all">{account.pin}</dd>
+                        </div>
+                      ) : null}
+                      {account.expiresAt ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Vence</dt>
+                          <dd className="font-bold">{account.expiresAt}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    {account.notes ? (
+                      <p className="mt-2 text-xs text-muted-foreground">{account.notes}</p>
+                    ) : null}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      También puedes verla cuando quieras en{" "}
+                      <Link to="/mis-pedidos" className="font-bold text-primary">
+                        Mis pedidos
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
