@@ -17,6 +17,38 @@ const inputCls =
 
 const STATUSES: StockStatus[] = ["available", "reserved", "sold", "suspended", "expired"];
 
+const PLATFORMS = [
+  "netflix",
+  "disney+",
+  "max",
+  "prime video",
+  "spotify",
+  "youtube premium",
+  "crunchyroll",
+  "paramount+",
+  "vix+",
+  "apple tv+",
+  "canva pro",
+  "chatgpt plus",
+];
+
+const DURATIONS: { label: string; days: number | null }[] = [
+  { label: "Sin vencimiento", days: null },
+  { label: "1 semana", days: 7 },
+  { label: "15 días", days: 15 },
+  { label: "1 mes", days: 30 },
+  { label: "2 meses", days: 60 },
+  { label: "3 meses", days: 90 },
+  { label: "6 meses", days: 180 },
+  { label: "1 año", days: 365 },
+];
+
+function dateAfter(days: number | null): string {
+  if (days === null) return "";
+  const d = new Date(Date.now() + days * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
 export function AdminStock() {
   const qc = useQueryClient();
   const fetchStock = useServerFn(listStock);
