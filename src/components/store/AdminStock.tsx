@@ -246,21 +246,42 @@ export function AdminStock() {
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs">
-            <span className="text-muted-foreground">Servicio</span>
-            <input
+            <span className="text-muted-foreground">Plataforma</span>
+            <select
               value={bulkForm.service}
               onChange={(e) => setBulkForm({ ...bulkForm, service: e.target.value })}
-              placeholder="netflix"
               className={inputCls}
-            />
+            >
+              <option value="">Elegir plataforma...</option>
+              {PLATFORMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+              <option value="__otra">Otra (escribir)</option>
+            </select>
+            {bulkForm.service === "__otra" ? (
+              <input
+                value={bulkForm.customService}
+                onChange={(e) => setBulkForm({ ...bulkForm, customService: e.target.value })}
+                placeholder="nombre del servicio"
+                className={inputCls}
+              />
+            ) : null}
           </label>
           <label className="text-xs">
-            <span className="text-muted-foreground">Vence (AAAA-MM-DD)</span>
-            <input
-              value={bulkForm.expiresAt}
-              onChange={(e) => setBulkForm({ ...bulkForm, expiresAt: e.target.value })}
+            <span className="text-muted-foreground">Duración</span>
+            <select
+              value={bulkForm.duration}
+              onChange={(e) => setBulkForm({ ...bulkForm, duration: e.target.value })}
               className={inputCls}
-            />
+            >
+              {DURATIONS.map((d) => (
+                <option key={d.label} value={String(d.days ?? "")}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <textarea
