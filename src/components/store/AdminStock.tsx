@@ -123,13 +123,42 @@ export function AdminStock() {
         <h3 className="text-xs font-extrabold uppercase text-muted-foreground">Agregar cuenta</h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <label className="text-xs">
-            <span className="text-muted-foreground">Servicio</span>
-            <input
+            <span className="text-muted-foreground">Plataforma</span>
+            <select
               value={form.service}
               onChange={(e) => setForm({ ...form, service: e.target.value })}
-              placeholder="netflix"
               className={inputCls}
-            />
+            >
+              <option value="">Elegir plataforma...</option>
+              {PLATFORMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+              <option value="__otra">Otra (escribir)</option>
+            </select>
+            {form.service === "__otra" ? (
+              <input
+                value={form.customService}
+                onChange={(e) => setForm({ ...form, customService: e.target.value })}
+                placeholder="nombre del servicio"
+                className={inputCls}
+              />
+            ) : null}
+          </label>
+          <label className="text-xs">
+            <span className="text-muted-foreground">Duración</span>
+            <select
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              className={inputCls}
+            >
+              {DURATIONS.map((d) => (
+                <option key={d.label} value={String(d.days ?? "")}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="text-xs">
             <span className="text-muted-foreground">Correo</span>
