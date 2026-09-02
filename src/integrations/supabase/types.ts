@@ -255,6 +255,45 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_winners: {
+        Row: {
+          amount_nio: number
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          id: string
+          participants: number
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          amount_nio?: number
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          participants?: number
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          amount_nio?: number
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          participants?: number
+          user_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       stock_accounts: {
         Row: {
           assigned_at: string | null
