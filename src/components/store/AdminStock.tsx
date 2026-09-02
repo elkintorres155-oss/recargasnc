@@ -205,13 +205,23 @@ export function AdminStock() {
           type="button"
           onClick={async () => {
             setMsg("");
-            if (!form.service.trim() || !form.email.trim() || !form.password.trim()) {
-              setMsg("Servicio, correo y contraseña son obligatorios.");
+            const svc = (form.service === "__otra" ? form.customService : form.service).trim();
+            if (!svc || !form.email.trim() || !form.password.trim()) {
+              setMsg("Plataforma, correo y contraseña son obligatorios.");
               return;
             }
             try {
               const res = await createOne({
-                data: { ...form, service: form.service.trim(), status: "available" },
+                data: {
+                  service: svc,
+                  email: form.email,
+                  password: form.password,
+                  profile: form.profile,
+                  pin: form.pin,
+                  notes: form.notes,
+                  expiresAt: dateAfter(form.duration ? Number(form.duration) : null),
+                  status: "available",
+                },
               });
               setMsg(res.ok ? "Cuenta agregada." : (res.message ?? "Error"));
               if (res.ok) setForm({ ...form, email: "", password: "", profile: "", pin: "", notes: "" });
