@@ -65,14 +65,15 @@ export function AdminStock() {
 
   const [form, setForm] = useState({
     service: "",
+    customService: "",
     email: "",
     password: "",
     profile: "",
     pin: "",
     notes: "",
-    expiresAt: "",
+    duration: "30",
   });
-  const [bulkForm, setBulkForm] = useState({ service: "", text: "", expiresAt: "" });
+  const [bulkForm, setBulkForm] = useState({ service: "", customService: "", text: "", duration: "30" });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["stock", service, status],
