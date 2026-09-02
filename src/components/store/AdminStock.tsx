@@ -192,15 +192,6 @@ export function AdminStock() {
               className={inputCls}
             />
           </label>
-          <label className="text-xs">
-            <span className="text-muted-foreground">Vence (AAAA-MM-DD)</span>
-            <input
-              value={form.expiresAt}
-              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              placeholder="2026-12-31"
-              className={inputCls}
-            />
-          </label>
           <label className="text-xs sm:col-span-3">
             <span className="text-muted-foreground">Notas</span>
             <input
