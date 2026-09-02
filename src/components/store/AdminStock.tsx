@@ -152,11 +152,22 @@ export function AdminStock() {
           type="button"
           onClick={async () => {
             setMsg("");
-            const res = await createOne({ data: { ...form, status: "available" } });
-            setMsg(res.ok ? "Cuenta agregada." : (res.message ?? "Error"));
-            if (res.ok) setForm({ ...form, email: "", password: "", profile: "", pin: "", notes: "" });
-            refresh();
+            if (!form.service.trim() || !form.email.trim() || !form.password.trim()) {
+              setMsg("Servicio, correo y contraseña son obligatorios.");
+              return;
+            }
+            try {
+              const res = await createOne({
+                data: { ...form, service: form.service.trim(), status: "available" },
+              });
+              setMsg(res.ok ? "Cuenta agregada." : (res.message ?? "Error"));
+              if (res.ok) setForm({ ...form, email: "", password: "", profile: "", pin: "", notes: "" });
+              refresh();
+            } catch (e) {
+              setMsg(e instanceof Error ? e.message : "No se pudo agregar la cuenta.");
+            }
           }}
+
           className="mt-3 rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground"
         >
           Agregar cuenta
