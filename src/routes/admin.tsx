@@ -6,6 +6,7 @@ import type { Category, Pack, Product } from "@/components/store/data";
 import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { AdminStock } from "@/components/store/AdminStock";
+import { AdminRaffle } from "@/components/store/AdminRaffle";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
@@ -39,6 +40,7 @@ const TABS = [
   { id: "catalogo", label: "🎮 Catálogo y precios" },
   { id: "saldos", label: "💰 Recargas de saldo" },
   { id: "stock", label: "🎬 Stock de cuentas" },
+  { id: "ruleta", label: "🎡 Ruleta semanal" },
   { id: "proveedor", label: "🔌 Proveedor" },
 ] as const;
 
@@ -705,6 +707,8 @@ function AdminPage() {
         {tab === "saldos" ? <AdminWallets /> : null}
 
         {tab === "stock" ? <AdminStock /> : null}
+
+        {tab === "ruleta" ? <AdminRaffle /> : null}
 
         {tab === "proveedor" ? <ProviderCatalog /> : null}
 
