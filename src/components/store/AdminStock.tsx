@@ -295,9 +295,9 @@ export function AdminStock() {
           type="button"
           onClick={async () => {
             setMsg("");
-            const svc = bulkForm.service.trim();
+            const svc = (bulkForm.service === "__otra" ? bulkForm.customService : bulkForm.service).trim();
             if (!svc) {
-              setMsg("Escribe el servicio (ej. netflix) antes de agregar.");
+              setMsg("Elige la plataforma antes de agregar.");
               return;
             }
             if (!bulkForm.text.trim()) {
@@ -305,7 +305,13 @@ export function AdminStock() {
               return;
             }
             try {
-              const res = await bulk({ data: { ...bulkForm, service: svc } });
+              const res = await bulk({
+                data: {
+                  service: svc,
+                  text: bulkForm.text,
+                  expiresAt: dateAfter(bulkForm.duration ? Number(bulkForm.duration) : null),
+                },
+              });
               setMsg(res.ok ? `${res.created} cuentas agregadas.` : res.message);
               if (res.ok) setBulkForm({ ...bulkForm, text: "" });
               refresh();
