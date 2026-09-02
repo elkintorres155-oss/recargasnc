@@ -17,6 +17,38 @@ const inputCls =
 
 const STATUSES: StockStatus[] = ["available", "reserved", "sold", "suspended", "expired"];
 
+const PLATFORMS = [
+  "netflix",
+  "disney+",
+  "max",
+  "prime video",
+  "spotify",
+  "youtube premium",
+  "crunchyroll",
+  "paramount+",
+  "vix+",
+  "apple tv+",
+  "canva pro",
+  "chatgpt plus",
+];
+
+const DURATIONS: { label: string; days: number | null }[] = [
+  { label: "Sin vencimiento", days: null },
+  { label: "1 semana", days: 7 },
+  { label: "15 días", days: 15 },
+  { label: "1 mes", days: 30 },
+  { label: "2 meses", days: 60 },
+  { label: "3 meses", days: 90 },
+  { label: "6 meses", days: 180 },
+  { label: "1 año", days: 365 },
+];
+
+function dateAfter(days: number | null): string {
+  if (days === null) return "";
+  const d = new Date(Date.now() + days * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
 export function AdminStock() {
   const qc = useQueryClient();
   const fetchStock = useServerFn(listStock);
@@ -33,14 +65,15 @@ export function AdminStock() {
 
   const [form, setForm] = useState({
     service: "",
+    customService: "",
     email: "",
     password: "",
     profile: "",
     pin: "",
     notes: "",
-    expiresAt: "",
+    duration: "30",
   });
-  const [bulkForm, setBulkForm] = useState({ service: "", text: "", expiresAt: "" });
+  const [bulkForm, setBulkForm] = useState({ service: "", customService: "", text: "", duration: "30" });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["stock", service, status],
@@ -90,13 +123,42 @@ export function AdminStock() {
         <h3 className="text-xs font-extrabold uppercase text-muted-foreground">Agregar cuenta</h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <label className="text-xs">
-            <span className="text-muted-foreground">Servicio</span>
-            <input
+            <span className="text-muted-foreground">Plataforma</span>
+            <select
               value={form.service}
               onChange={(e) => setForm({ ...form, service: e.target.value })}
-              placeholder="netflix"
               className={inputCls}
-            />
+            >
+              <option value="">Elegir plataforma...</option>
+              {PLATFORMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+              <option value="__otra">Otra (escribir)</option>
+            </select>
+            {form.service === "__otra" ? (
+              <input
+                value={form.customService}
+                onChange={(e) => setForm({ ...form, customService: e.target.value })}
+                placeholder="nombre del servicio"
+                className={inputCls}
+              />
+            ) : null}
+          </label>
+          <label className="text-xs">
+            <span className="text-muted-foreground">Duración</span>
+            <select
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              className={inputCls}
+            >
+              {DURATIONS.map((d) => (
+                <option key={d.label} value={String(d.days ?? "")}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="text-xs">
             <span className="text-muted-foreground">Correo</span>
@@ -130,15 +192,6 @@ export function AdminStock() {
               className={inputCls}
             />
           </label>
-          <label className="text-xs">
-            <span className="text-muted-foreground">Vence (AAAA-MM-DD)</span>
-            <input
-              value={form.expiresAt}
-              onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              placeholder="2026-12-31"
-              className={inputCls}
-            />
-          </label>
           <label className="text-xs sm:col-span-3">
             <span className="text-muted-foreground">Notas</span>
             <input
@@ -152,13 +205,23 @@ export function AdminStock() {
           type="button"
           onClick={async () => {
             setMsg("");
-            if (!form.service.trim() || !form.email.trim() || !form.password.trim()) {
-              setMsg("Servicio, correo y contraseña son obligatorios.");
+            const svc = (form.service === "__otra" ? form.customService : form.service).trim();
+            if (!svc || !form.email.trim() || !form.password.trim()) {
+              setMsg("Plataforma, correo y contraseña son obligatorios.");
               return;
             }
             try {
               const res = await createOne({
-                data: { ...form, service: form.service.trim(), status: "available" },
+                data: {
+                  service: svc,
+                  email: form.email,
+                  password: form.password,
+                  profile: form.profile,
+                  pin: form.pin,
+                  notes: form.notes,
+                  expiresAt: dateAfter(form.duration ? Number(form.duration) : null),
+                  status: "available",
+                },
               });
               setMsg(res.ok ? "Cuenta agregada." : (res.message ?? "Error"));
               if (res.ok) setForm({ ...form, email: "", password: "", profile: "", pin: "", notes: "" });
@@ -183,21 +246,42 @@ export function AdminStock() {
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="text-xs">
-            <span className="text-muted-foreground">Servicio</span>
-            <input
+            <span className="text-muted-foreground">Plataforma</span>
+            <select
               value={bulkForm.service}
               onChange={(e) => setBulkForm({ ...bulkForm, service: e.target.value })}
-              placeholder="netflix"
               className={inputCls}
-            />
+            >
+              <option value="">Elegir plataforma...</option>
+              {PLATFORMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+              <option value="__otra">Otra (escribir)</option>
+            </select>
+            {bulkForm.service === "__otra" ? (
+              <input
+                value={bulkForm.customService}
+                onChange={(e) => setBulkForm({ ...bulkForm, customService: e.target.value })}
+                placeholder="nombre del servicio"
+                className={inputCls}
+              />
+            ) : null}
           </label>
           <label className="text-xs">
-            <span className="text-muted-foreground">Vence (AAAA-MM-DD)</span>
-            <input
-              value={bulkForm.expiresAt}
-              onChange={(e) => setBulkForm({ ...bulkForm, expiresAt: e.target.value })}
+            <span className="text-muted-foreground">Duración</span>
+            <select
+              value={bulkForm.duration}
+              onChange={(e) => setBulkForm({ ...bulkForm, duration: e.target.value })}
               className={inputCls}
-            />
+            >
+              {DURATIONS.map((d) => (
+                <option key={d.label} value={String(d.days ?? "")}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <textarea
@@ -211,9 +295,9 @@ export function AdminStock() {
           type="button"
           onClick={async () => {
             setMsg("");
-            const svc = bulkForm.service.trim();
+            const svc = (bulkForm.service === "__otra" ? bulkForm.customService : bulkForm.service).trim();
             if (!svc) {
-              setMsg("Escribe el servicio (ej. netflix) antes de agregar.");
+              setMsg("Elige la plataforma antes de agregar.");
               return;
             }
             if (!bulkForm.text.trim()) {
@@ -221,7 +305,13 @@ export function AdminStock() {
               return;
             }
             try {
-              const res = await bulk({ data: { ...bulkForm, service: svc } });
+              const res = await bulk({
+                data: {
+                  service: svc,
+                  text: bulkForm.text,
+                  expiresAt: dateAfter(bulkForm.duration ? Number(bulkForm.duration) : null),
+                },
+              });
               setMsg(res.ok ? `${res.created} cuentas agregadas.` : res.message);
               if (res.ok) setBulkForm({ ...bulkForm, text: "" });
               refresh();
