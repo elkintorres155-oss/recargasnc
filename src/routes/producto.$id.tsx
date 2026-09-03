@@ -161,35 +161,6 @@ function ProductPage() {
     }
   };
 
-  const verify = async () => {
-    setCheckMsg("");
-    setCheckOk(null);
-    if (!pack?.sku) {
-      setCheckMsg("Este paquete aún no tiene código del proveedor (SKU).");
-      setCheckOk(false);
-      return;
-    }
-    if (!playerId.trim()) {
-      setCheckMsg("Ingresa tu ID de jugador.");
-      setCheckOk(false);
-      return;
-    }
-    if (session !== "signed-in") {
-      navigate({ to: "/auth" });
-      return;
-    }
-    setChecking(true);
-    try {
-      const res = await verifyId({ data: { serviceCode: pack.sku, userId: playerId.trim() } });
-      setCheckOk(res.valid);
-      setCheckMsg(res.message);
-    } catch (e) {
-      setCheckOk(false);
-      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
-    } finally {
-      setChecking(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">
