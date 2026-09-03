@@ -38,18 +38,18 @@ function Index() {
 
       <main>
         <section className="mx-auto max-w-6xl px-4 pt-6">
-          <div className="overflow-hidden rounded-3xl border border-border glow-ring">
+          <div className="card-shine animate-rise animate-glow overflow-hidden rounded-3xl border border-border">
             <img
               src={banner1}
               alt="Paga ahora en USDT con Binance Pay"
               width={1600}
               height={608}
-              className="w-full object-cover"
+              className="w-full object-cover transition-transform duration-700 ease-out hover:scale-105"
             />
           </div>
 
           {showPromo ? (
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/30 bg-card/80 p-4">
+            <div className="animate-rise mt-5 flex items-start gap-3 rounded-2xl border border-primary/30 bg-card/80 p-4 [animation-delay:0.15s]">
               <span
                 aria-hidden
                 className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-lg"
