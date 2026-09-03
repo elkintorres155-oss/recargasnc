@@ -9,16 +9,16 @@ function ProductCard({ item }: { item: Product }) {
     <Link
       to="/producto/$id"
       params={{ id: item.id }}
-      className="group relative block overflow-hidden rounded-2xl surface-card transition-transform duration-200 hover:-translate-y-1 hover:glow-ring"
+      className="group relative block overflow-hidden rounded-2xl surface-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:glow-ring"
     >
-      <div className="relative aspect-square overflow-hidden">
+      <div className="card-shine relative aspect-square overflow-hidden">
         <img
           src={item.image}
           alt={item.name}
           loading="lazy"
           width={640}
           height={640}
-          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-1"
         />
         {item.hot ? (
           <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
