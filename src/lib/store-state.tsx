@@ -57,7 +57,7 @@ export const defaultBanks: Bank[] = [
 
 export const defaultSettings: StoreSettings = {
   storeName: "RECARGAS",
-  whatsapp: "50588888888",
+  whatsapp: "50585300929",
   promoText: "Recarga y podrías ganar diamantes totalmente GRATIS.",
   showPromo: true,
   sandbox: false,
