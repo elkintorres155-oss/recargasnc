@@ -275,6 +275,11 @@ function ProductPage() {
                     setCheckMsg("");
                     setCheckOk(null);
                     setNickname("");
+                    if (session !== "signed-in") {
+                      setCheckOk(false);
+                      setCheckMsg("Inicia sesión para verificar tu ID.");
+                      return;
+                    }
                     setChecking(true);
                     try {
                       const res = await verifyId({
