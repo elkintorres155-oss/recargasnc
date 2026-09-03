@@ -75,18 +75,18 @@ function Index() {
         </section>
 
         <section className="mx-auto max-w-3xl px-4 py-14 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+          <span className="animate-pop inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
             ⚡ Entrega inmediata &amp; verificada
           </span>
-          <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="animate-blur-in mt-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl [animation-delay:0.1s]">
             Todo lo que juegas y ves,{" "}
-            <span className="text-gradient-primary">en un solo lugar</span>
+            <span className="text-gradient-animated">en un solo lugar</span>
           </h1>
-          <p className="mt-4 text-base text-muted-foreground">
+          <p className="animate-rise mt-4 text-base text-muted-foreground [animation-delay:0.25s]">
             Recargas de juegos, suscripciones de streaming y gift cards. Precios en
             córdobas (C$) para Nicaragua, atención inmediata por WhatsApp.
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <div className="reveal-stagger mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <span>
               ⚡ Entrega <strong className="text-foreground">inmediata</strong>
             </span>
