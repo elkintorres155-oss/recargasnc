@@ -81,6 +81,43 @@ function ProductPage() {
     if (!phoneTouched && profilePhone.data?.phone) setPhone(profilePhone.data.phone);
   }, [profilePhone.data?.phone, phoneTouched]);
 
+  const needsId = Boolean(base?.needsId);
+  const activeSku = (base?.packs.find((p) => p.id === packId) ?? base?.packs[0])?.sku ?? "";
+  const trimmedId = playerId.trim();
+
+  // Verificación automática del ID: al escribir, muestra el nickname solo.
+  useEffect(() => {
+    if (!needsId) return;
+    setNickname("");
+    setCheckOk(null);
+    setCheckMsg("");
+    if (trimmedId.length < 5 || !activeSku || session !== "signed-in") return;
+    let cancelled = false;
+    setChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await verifyId({ data: { serviceCode: activeSku, userId: trimmedId } });
+        if (cancelled) return;
+        setCheckOk(res.valid);
+        setNickname(res.valid && res.nickname ? res.nickname : "");
+        setCheckMsg(res.valid ? "" : res.message);
+      } catch (e) {
+        if (cancelled) return;
+        setCheckOk(false);
+        setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }, 650);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      setChecking(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trimmedId, activeSku, needsId, session]);
+
+
 
   if (!base) {
     return (
