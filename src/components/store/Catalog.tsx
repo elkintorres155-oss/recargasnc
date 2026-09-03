@@ -104,7 +104,10 @@ export function Catalog() {
           No encontramos resultados para "{query}".
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div
+          key={`${category.id}-${query}`}
+          className="reveal-stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+        >
           {items.map((item) => (
             <ProductCard key={item.id} item={item} />
           ))}
