@@ -147,3 +147,114 @@
   box-shadow: var(--shadow-glow);
 }
 
+
+/* ===== Animaciones ===== */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes blur-in {
+  from { opacity: 0; filter: blur(12px); transform: translateY(14px); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent), 0 10px 40px -20px color-mix(in oklab, var(--primary) 45%, transparent); }
+  50% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent), 0 22px 60px -18px color-mix(in oklab, var(--primary) 75%, transparent); }
+}
+@keyframes shine-sweep {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+@keyframes gradient-pan {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.9); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@utility animate-rise {
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@utility animate-blur-in {
+  animation: blur-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@utility animate-float {
+  animation: float-soft 6s ease-in-out infinite;
+}
+@utility animate-glow {
+  animation: glow-pulse 3.5s ease-in-out infinite;
+}
+@utility animate-pop {
+  animation: pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@utility animate-marquee {
+  animation: marquee-x 22s linear infinite;
+}
+
+@utility text-gradient-animated {
+  background-image: linear-gradient(100deg, var(--primary), var(--accent), var(--primary));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 5s linear infinite;
+}
+
+@utility card-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--primary) 28%, transparent),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+}
+.group:hover .card-shine::after,
+.card-shine:hover::after {
+  animation: shine-sweep 0.9s ease-out;
+}
+
+.reveal-stagger > * {
+  animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.reveal-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.reveal-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.reveal-stagger > *:nth-child(3) { animation-delay: 0.09s; }
+.reveal-stagger > *:nth-child(4) { animation-delay: 0.12s; }
+.reveal-stagger > *:nth-child(5) { animation-delay: 0.15s; }
+.reveal-stagger > *:nth-child(6) { animation-delay: 0.18s; }
+.reveal-stagger > *:nth-child(7) { animation-delay: 0.21s; }
+.reveal-stagger > *:nth-child(8) { animation-delay: 0.24s; }
+.reveal-stagger > *:nth-child(9) { animation-delay: 0.27s; }
+.reveal-stagger > *:nth-child(10) { animation-delay: 0.3s; }
+.reveal-stagger > *:nth-child(n + 11) { animation-delay: 0.33s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
