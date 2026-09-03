@@ -268,6 +268,32 @@ function ProductPage() {
                         : "border-border"
                   }`}
                 />
+                <button
+                  type="button"
+                  disabled={checking || !trimmedId || !activeSku}
+                  onClick={async () => {
+                    setCheckMsg("");
+                    setCheckOk(null);
+                    setNickname("");
+                    setChecking(true);
+                    try {
+                      const res = await verifyId({
+                        data: { serviceCode: activeSku, userId: trimmedId },
+                      });
+                      setCheckOk(res.valid);
+                      setNickname(res.valid && res.nickname ? res.nickname : "");
+                      setCheckMsg(res.valid ? (res.nickname ? "" : "ID válido.") : res.message);
+                    } catch (e) {
+                      setCheckOk(false);
+                      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+                    } finally {
+                      setChecking(false);
+                    }
+                  }}
+                  className="mt-2 rounded-full border border-border px-4 py-2 text-xs font-extrabold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+                >
+                  {checking ? "Verificando..." : "Verificar ID"}
+                </button>
                 {checking ? (
                   <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                     <span className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
