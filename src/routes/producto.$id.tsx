@@ -34,7 +34,7 @@ export const Route = createFileRoute("/producto/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const { findItem } = useStore();
+  const { findItem, settings } = useStore();
   const base = findItem(id);
 
   const [packId, setPackId] = useState<string | null>(null);
@@ -268,6 +268,32 @@ function ProductPage() {
                         : "border-border"
                   }`}
                 />
+                <button
+                  type="button"
+                  disabled={checking || !trimmedId || !activeSku}
+                  onClick={async () => {
+                    setCheckMsg("");
+                    setCheckOk(null);
+                    setNickname("");
+                    setChecking(true);
+                    try {
+                      const res = await verifyId({
+                        data: { serviceCode: activeSku, userId: trimmedId },
+                      });
+                      setCheckOk(res.valid);
+                      setNickname(res.valid && res.nickname ? res.nickname : "");
+                      setCheckMsg(res.valid ? (res.nickname ? "" : "ID válido.") : res.message);
+                    } catch (e) {
+                      setCheckOk(false);
+                      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+                    } finally {
+                      setChecking(false);
+                    }
+                  }}
+                  className="mt-2 rounded-full border border-border px-4 py-2 text-xs font-extrabold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+                >
+                  {checking ? "Verificando..." : "Verificar ID"}
+                </button>
                 {checking ? (
                   <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                     <span className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -400,7 +426,20 @@ function ProductPage() {
               >
                 {busy ? "Procesando..." : "Pagar con mi saldo"}
               </button>
+              <a
+                href={`https://wa.me/${settings.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                  `Hola ${settings.storeName}, quiero hacer un pedido:\n\n• Producto: ${base.name}\n• Paquete: ${pack ? `${pack.label} — ${formatC(pack.price)}` : "—"}${
+                    base.needsId ? `\n• ID de jugador: ${trimmedId || "(pendiente)"}${nickname ? ` (${nickname})` : ""}` : ""
+                  }${cleanPhone ? `\n• Teléfono: ${cleanPhone}` : ""}`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-primary/50 bg-primary/10 px-6 py-3 text-sm font-extrabold text-primary transition-colors hover:bg-primary/20"
+              >
+                Hacer pedido por WhatsApp
+              </a>
             </div>
+
 
           </div>
         </div>
