@@ -56,6 +56,7 @@ function ProductPage() {
   const [checking, setChecking] = useState(false);
   const [checkMsg, setCheckMsg] = useState("");
   const [checkOk, setCheckOk] = useState<boolean | null>(null);
+  const [nickname, setNickname] = useState("");
 
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -79,6 +80,43 @@ function ProductPage() {
   useEffect(() => {
     if (!phoneTouched && profilePhone.data?.phone) setPhone(profilePhone.data.phone);
   }, [profilePhone.data?.phone, phoneTouched]);
+
+  const needsId = Boolean(base?.needsId);
+  const activeSku = (base?.packs.find((p) => p.id === packId) ?? base?.packs[0])?.sku ?? "";
+  const trimmedId = playerId.trim();
+
+  // Verificación automática del ID: al escribir, muestra el nickname solo.
+  useEffect(() => {
+    if (!needsId) return;
+    setNickname("");
+    setCheckOk(null);
+    setCheckMsg("");
+    if (trimmedId.length < 5 || !activeSku || session !== "signed-in") return;
+    let cancelled = false;
+    setChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await verifyId({ data: { serviceCode: activeSku, userId: trimmedId } });
+        if (cancelled) return;
+        setCheckOk(res.valid);
+        setNickname(res.valid && res.nickname ? res.nickname : "");
+        setCheckMsg(res.valid ? "" : res.message);
+      } catch (e) {
+        if (cancelled) return;
+        setCheckOk(false);
+        setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }, 650);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      setChecking(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trimmedId, activeSku, needsId, session]);
+
 
 
   if (!base) {
@@ -161,35 +199,6 @@ function ProductPage() {
     }
   };
 
-  const verify = async () => {
-    setCheckMsg("");
-    setCheckOk(null);
-    if (!pack?.sku) {
-      setCheckMsg("Este paquete aún no tiene código del proveedor (SKU).");
-      setCheckOk(false);
-      return;
-    }
-    if (!playerId.trim()) {
-      setCheckMsg("Ingresa tu ID de jugador.");
-      setCheckOk(false);
-      return;
-    }
-    if (session !== "signed-in") {
-      navigate({ to: "/auth" });
-      return;
-    }
-    setChecking(true);
-    try {
-      const res = await verifyId({ data: { serviceCode: pack.sku, userId: playerId.trim() } });
-      setCheckOk(res.valid);
-      setCheckMsg(res.message);
-    } catch (e) {
-      setCheckOk(false);
-      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
-    } finally {
-      setChecking(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -251,20 +260,25 @@ function ProductPage() {
                   value={playerId}
                   onChange={(e) => setPlayerId(e.target.value)}
                   placeholder="Ej: 123456789"
-                  className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                  className={`mt-3 w-full rounded-xl border bg-card/70 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary ${
+                    checkOk === true
+                      ? "border-primary"
+                      : checkOk === false
+                        ? "border-destructive"
+                        : "border-border"
+                  }`}
                 />
-                <button
-                  type="button"
-                  onClick={verify}
-                  disabled={checking}
-                  className="mt-2 rounded-full border border-border px-4 py-2 text-xs font-extrabold text-muted-foreground hover:text-foreground disabled:opacity-60"
-                >
-                  {checking ? "Verificando..." : "Verificar ID"}
-                </button>
-                {checkMsg ? (
-                  <p
-                    className={`mt-2 text-xs font-semibold ${checkOk ? "text-primary" : "text-destructive"}`}
-                  >
+                {checking ? (
+                  <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <span className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Buscando cuenta...
+                  </p>
+                ) : nickname ? (
+                  <p className="animate-pop mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-extrabold text-primary">
+                    ✅ {nickname}
+                  </p>
+                ) : checkMsg ? (
+                  <p className="animate-rise mt-2 text-xs font-semibold text-destructive">
                     {checkMsg}
                   </p>
                 ) : null}
