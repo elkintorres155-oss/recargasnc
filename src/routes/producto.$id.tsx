@@ -426,7 +426,20 @@ function ProductPage() {
               >
                 {busy ? "Procesando..." : "Pagar con mi saldo"}
               </button>
+              <a
+                href={`https://wa.me/${settings.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                  `Hola ${settings.storeName}, quiero hacer un pedido:\n\n• Producto: ${base.name}\n• Paquete: ${pack ? `${pack.label} — ${formatC(pack.price)}` : "—"}${
+                    base.needsId ? `\n• ID de jugador: ${trimmedId || "(pendiente)"}${nickname ? ` (${nickname})` : ""}` : ""
+                  }${cleanPhone ? `\n• Teléfono: ${cleanPhone}` : ""}`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-primary/50 bg-primary/10 px-6 py-3 text-sm font-extrabold text-primary transition-colors hover:bg-primary/20"
+              >
+                Hacer pedido por WhatsApp
+              </a>
             </div>
+
 
           </div>
         </div>
