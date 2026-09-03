@@ -260,20 +260,25 @@ function ProductPage() {
                   value={playerId}
                   onChange={(e) => setPlayerId(e.target.value)}
                   placeholder="Ej: 123456789"
-                  className="mt-3 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary"
+                  className={`mt-3 w-full rounded-xl border bg-card/70 px-4 py-3 text-sm outline-none transition-colors duration-300 focus:border-primary ${
+                    checkOk === true
+                      ? "border-primary"
+                      : checkOk === false
+                        ? "border-destructive"
+                        : "border-border"
+                  }`}
                 />
-                <button
-                  type="button"
-                  onClick={verify}
-                  disabled={checking}
-                  className="mt-2 rounded-full border border-border px-4 py-2 text-xs font-extrabold text-muted-foreground hover:text-foreground disabled:opacity-60"
-                >
-                  {checking ? "Verificando..." : "Verificar ID"}
-                </button>
-                {checkMsg ? (
-                  <p
-                    className={`mt-2 text-xs font-semibold ${checkOk ? "text-primary" : "text-destructive"}`}
-                  >
+                {checking ? (
+                  <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <span className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Buscando cuenta...
+                  </p>
+                ) : nickname ? (
+                  <p className="animate-pop mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-extrabold text-primary">
+                    ✅ {nickname}
+                  </p>
+                ) : checkMsg ? (
+                  <p className="animate-rise mt-2 text-xs font-semibold text-destructive">
                     {checkMsg}
                   </p>
                 ) : null}
