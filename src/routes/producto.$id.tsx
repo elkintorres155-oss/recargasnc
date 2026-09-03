@@ -56,6 +56,7 @@ function ProductPage() {
   const [checking, setChecking] = useState(false);
   const [checkMsg, setCheckMsg] = useState("");
   const [checkOk, setCheckOk] = useState<boolean | null>(null);
+  const [nickname, setNickname] = useState("");
 
   const navigate = useNavigate();
   const qc = useQueryClient();
