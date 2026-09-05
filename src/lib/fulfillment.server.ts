@@ -63,6 +63,8 @@ export async function analyzeReceiptImage(imageDataUrl: string): Promise<Receipt
     bank: parsed.bank ?? null,
     reference: parsed.reference ?? null,
     date: parsed.date ?? null,
+    note_code: typeof parsed.note_code === 'string' ? parsed.note_code.trim().toLowerCase() : null,
+
     confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
     notes: parsed.notes ?? '',
   };
