@@ -195,7 +195,34 @@ function TopupPage() {
             ) : null}
           </div>
 
+          <div className="mt-4 rounded-2xl border border-primary/50 bg-primary/5 p-4">
+            <p className="text-sm font-extrabold">Código para la nota del pago</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Escribe este código en el concepto / nota / descripción de tu transferencia. La IA lo
+              lee en tu comprobante y acredita tu saldo al instante.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="rounded-xl border border-primary bg-background/70 px-4 py-2 font-mono text-lg font-extrabold tracking-[0.35em] uppercase">
+                {code || "······"}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">
+                {code ? `Vence en ${mmss}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => void loadCode(true)}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
+              >
+                Generar otro
+              </button>
+            </div>
+            {codeError ? (
+              <p className="mt-2 text-xs font-semibold text-destructive">{codeError}</p>
+            ) : null}
+          </div>
+
           <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">2. Monto</h2>
+
           <label className="block text-sm">
             <input
               inputMode="decimal"
