@@ -47,6 +47,7 @@ function TopupPage() {
   const navigate = useNavigate();
   const { banks } = useStore();
   const submit = useServerFn(createTopupRequest);
+  const askCode = useServerFn(getTopupCode);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [method, setMethod] = useState<TopupMethod>("binance");
@@ -55,11 +56,50 @@ function TopupPage() {
   const [image, setImage] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState("");
+  const [expiresAt, setExpiresAt] = useState(0);
+  const [left, setLeft] = useState(0);
+  const [codeError, setCodeError] = useState("");
+
+  const loadCode = async (force: boolean) => {
+    setCodeError("");
+    try {
+      const res = await askCode({ data: { force } });
+      setCode(res.code);
+      setExpiresAt(new Date(res.expiresAt).getTime());
+    } catch (e) {
+      setCodeError(
+        e instanceof Error && e.message.includes("Unauthorized")
+          ? "Inicia sesión para generar tu código de pago."
+          : "No se pudo generar el código.",
+      );
+    }
+  };
+
+  useEffect(() => {
+    void loadCode(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => setLeft(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  // Cuando el código vence se genera uno nuevo automáticamente.
+  useEffect(() => {
+    if (expiresAt && left === 0) void loadCode(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
 
   const bank = banks.find(
     (b) => b.name.toLowerCase().includes(method) || b.id.toLowerCase().includes(method),
   );
   const value = Number(amount.replace(",", "."));
+  const mmss = `${String(Math.floor(left / 60)).padStart(1, "0")}:${String(left % 60).padStart(2, "0")}`;
 
   const send = async () => {
     setMsg("");
@@ -79,6 +119,7 @@ function TopupPage() {
           methodName: METHOD_NAME[method],
           amountNio: value,
           reference: reference.trim(),
+          noteCode: code,
           imageDataUrl: image,
         },
       });
@@ -95,6 +136,7 @@ function TopupPage() {
       setBusy(false);
     }
   };
+
 
   return (
     <div className="min-h-screen">
