@@ -239,6 +239,11 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
     const amountMismatch =
       detectedAmount != null && Math.abs(detectedAmount - data.amountNio) >= 0.01;
 
+    const codeMatch = codeValid && !!ai.noteCode && ai.noteCode === noteCode;
+    // Acreditación automática: la IA confía ≥90%, aprueba el comprobante
+    // y el código de nota vigente coincide con el que aparece en la imagen.
+    const autoApprove = ai.verdict === 'approved' && ai.confidence >= 0.9 && codeMatch;
+
     const { data: row, error } = await supabaseAdmin
       .from('topup_requests')
       .insert({
@@ -249,20 +254,62 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         reference: data.reference.trim(),
         receipt_path: receiptPath,
         status: 'pending' as const,
+        note_code: noteCode,
+        ai_note_code: ai.noteCode,
         ai_reference: ai.reference,
         ai_amount_nio: ai.amount,
         ai_bank: ai.bank,
         ai_date: ai.date,
         ai_confidence: ai.confidence,
         ai_verdict: ai.verdict,
-        ai_notes: amountMismatch
-          ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}. ${ai.notes}`.trim()
-          : ai.notes,
+        ai_notes: [
+          amountMismatch
+            ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}.`
+            : '',
+          !codeValid && noteCode ? 'El código de nota venció o ya fue usado.' : '',
+          codeValid && ai.noteCode && !codeMatch
+            ? `El código leído (${ai.noteCode}) no coincide con el generado (${noteCode}).`
+            : '',
+          ai.notes,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .trim(),
       })
       .select('id, status, amount_nio')
       .single();
     if (error) throw new Error(error.message);
 
+    let autoApproved = false;
+    if (autoApprove && codeRow) {
+      // Consume el código (evita reutilizarlo con otro comprobante).
+      const { data: usedCode } = await supabaseAdmin
+        .from('topup_codes')
+        .update({ used_at: new Date().toISOString() })
+        .eq('id', codeRow.id)
+        .is('used_at', null)
+        .select('id')
+        .maybeSingle();
+      if (usedCode) {
+        try {
+          const { reviewTopupById } = await import('@/lib/topup-review.server');
+          const result = await reviewTopupById({
+            topupId: row.id,
+            approve: true,
+            reason: `Aprobada automáticamente por la IA (${Math.round(ai.confidence * 100)}% de confianza, código ${noteCode}).`,
+          });
+          autoApproved = result.approved;
+          if (autoApproved) {
+            await supabaseAdmin
+              .from('topup_requests')
+              .update({ auto_approved: true, auto_source: 'ai' })
+              .eq('id', row.id);
+          }
+        } catch (e) {
+          console.error('[topup-auto-approve]', e);
+        }
+      }
+    }
 
     const { notifyAdminTelegram, topupKeyboard } = await import('@/lib/telegram.server');
     const { data: prof } = await supabaseAdmin
@@ -272,11 +319,14 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       .maybeSingle();
     await notifyAdminTelegram(
       [
-        '💰 <b>Nueva solicitud de recarga de saldo</b>',
+        autoApproved
+          ? '✅ <b>Recarga acreditada automáticamente por la IA</b>'
+          : '💰 <b>Nueva solicitud de recarga de saldo</b>',
         `Cliente: ${prof?.full_name || prof?.email || userId}`,
         `Monto a acreditar: C$ ${effectiveAmount}${amountMismatch ? ` (el cliente declaró C$ ${data.amountNio})` : ''}`,
         `Método: ${data.methodName || data.method.toUpperCase()}`,
         `Referencia: ${data.reference.trim() || '—'}`,
+        `Código de nota: ${noteCode || '—'} · Leído por la IA: ${ai.noteCode || '—'}`,
         `Comprobante: ${receiptPath ? 'sí' : 'no'}`,
         ...(receiptPath
           ? [
@@ -290,13 +340,15 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
             ].filter(Boolean)
           : []),
         '',
-        'Apruébala o recházala aquí mismo con los botones.',
+        autoApproved
+          ? 'El saldo ya fue acreditado, no requiere acción.'
+          : 'Apruébala o recházala aquí mismo con los botones.',
       ].join('\n'),
-      topupKeyboard(row.id),
+      autoApproved ? undefined : topupKeyboard(row.id),
     );
 
+    return { ...row, autoApproved, status: autoApproved ? 'approved' : row.status };
 
-    return row;
   });
 
 /* ------------------------------- ADMIN ------------------------------- */
