@@ -160,17 +160,39 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       if (uploadError) throw new Error(uploadError.message);
     }
 
-    // La IA lee el comprobante y extrae la REFERENCIA (y monto/banco/fecha)
-    // para que la revisión manual sea más rápida. Nunca acredita saldo sola.
+    // Código de nota vigente del usuario (5 minutos). La IA debe leerlo en el comprobante.
+    const noteCode = data.noteCode.trim().toLowerCase();
+    const { data: codeRow } = noteCode
+      ? await supabaseAdmin
+          .from('topup_codes')
+          .select('id, code, expires_at, used_at')
+          .eq('user_id', userId)
+          .ilike('code', noteCode)
+          .maybeSingle()
+      : { data: null };
+    const codeValid =
+      !!codeRow && !codeRow.used_at && new Date(codeRow.expires_at).getTime() > Date.now();
+
+    // La IA lee el comprobante y extrae REFERENCIA, monto, banco, fecha y el código de nota.
     let ai: {
       reference: string;
       amount: number | null;
       bank: string;
       date: string;
+      noteCode: string;
       confidence: number;
       verdict: string;
       notes: string;
-    } = { reference: '', amount: null, bank: '', date: '', confidence: 0, verdict: 'pending', notes: '' };
+    } = {
+      reference: '',
+      amount: null,
+      bank: '',
+      date: '',
+      noteCode: '',
+      confidence: 0,
+      verdict: 'pending',
+      notes: '',
+    };
 
     if (data.imageDataUrl) {
       try {
@@ -182,6 +204,7 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
           amount: analysis.amount,
           bank: analysis.bank ?? '',
           date: analysis.date ?? '',
+          noteCode: (analysis.note_code ?? '').replace(/[^a-z0-9]/gi, '').toLowerCase(),
           confidence: analysis.confidence,
           verdict: judged.verdict,
           notes: judged.reason || analysis.notes,
@@ -192,6 +215,7 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         ai.notes = 'No se pudo analizar el comprobante automáticamente.';
       }
     }
+
 
     // Detecta referencias repetidas también cuando el cliente no la escribió.
     const detectedRef = (data.reference.trim() || ai.reference).trim();
