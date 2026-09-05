@@ -1,9 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { StoreHeader } from "@/components/store/StoreHeader";
-import { createTopupRequest, TOPUP_METHODS, type TopupMethod } from "@/lib/wallet.functions";
+import {
+  createTopupRequest,
+  getTopupCode,
+  TOPUP_METHODS,
+  type TopupMethod,
+} from "@/lib/wallet.functions";
 import { formatC, useStore } from "@/lib/store-state";
+
 
 export const Route = createFileRoute("/recargar-saldo")({
   ssr: false,
