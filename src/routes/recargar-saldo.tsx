@@ -1,9 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { StoreHeader } from "@/components/store/StoreHeader";
-import { createTopupRequest, TOPUP_METHODS, type TopupMethod } from "@/lib/wallet.functions";
+import {
+  createTopupRequest,
+  getTopupCode,
+  TOPUP_METHODS,
+  type TopupMethod,
+} from "@/lib/wallet.functions";
 import { formatC, useStore } from "@/lib/store-state";
+
 
 export const Route = createFileRoute("/recargar-saldo")({
   ssr: false,
@@ -41,6 +47,7 @@ function TopupPage() {
   const navigate = useNavigate();
   const { banks } = useStore();
   const submit = useServerFn(createTopupRequest);
+  const askCode = useServerFn(getTopupCode);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [method, setMethod] = useState<TopupMethod>("binance");
@@ -49,11 +56,50 @@ function TopupPage() {
   const [image, setImage] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState("");
+  const [expiresAt, setExpiresAt] = useState(0);
+  const [left, setLeft] = useState(0);
+  const [codeError, setCodeError] = useState("");
+
+  const loadCode = async (force: boolean) => {
+    setCodeError("");
+    try {
+      const res = await askCode({ data: { force } });
+      setCode(res.code);
+      setExpiresAt(new Date(res.expiresAt).getTime());
+    } catch (e) {
+      setCodeError(
+        e instanceof Error && e.message.includes("Unauthorized")
+          ? "Inicia sesión para generar tu código de pago."
+          : "No se pudo generar el código.",
+      );
+    }
+  };
+
+  useEffect(() => {
+    void loadCode(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => setLeft(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  // Cuando el código vence se genera uno nuevo automáticamente.
+  useEffect(() => {
+    if (expiresAt && left === 0) void loadCode(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
 
   const bank = banks.find(
     (b) => b.name.toLowerCase().includes(method) || b.id.toLowerCase().includes(method),
   );
   const value = Number(amount.replace(",", "."));
+  const mmss = `${String(Math.floor(left / 60)).padStart(1, "0")}:${String(left % 60).padStart(2, "0")}`;
 
   const send = async () => {
     setMsg("");
@@ -73,6 +119,7 @@ function TopupPage() {
           methodName: METHOD_NAME[method],
           amountNio: value,
           reference: reference.trim(),
+          noteCode: code,
           imageDataUrl: image,
         },
       });
@@ -89,6 +136,7 @@ function TopupPage() {
       setBusy(false);
     }
   };
+
 
   return (
     <div className="min-h-screen">
@@ -147,7 +195,34 @@ function TopupPage() {
             ) : null}
           </div>
 
+          <div className="mt-4 rounded-2xl border border-primary/50 bg-primary/5 p-4">
+            <p className="text-sm font-extrabold">Código para la nota del pago</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Escribe este código en el concepto / nota / descripción de tu transferencia. La IA lo
+              lee en tu comprobante y acredita tu saldo al instante.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="rounded-xl border border-primary bg-background/70 px-4 py-2 font-mono text-lg font-extrabold tracking-[0.35em] uppercase">
+                {code || "······"}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">
+                {code ? `Vence en ${mmss}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => void loadCode(true)}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
+              >
+                Generar otro
+              </button>
+            </div>
+            {codeError ? (
+              <p className="mt-2 text-xs font-semibold text-destructive">{codeError}</p>
+            ) : null}
+          </div>
+
           <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">2. Monto</h2>
+
           <label className="block text-sm">
             <input
               inputMode="decimal"

@@ -7,6 +7,7 @@ export type ReceiptAnalysis = {
   bank: string | null;
   reference: string | null;
   date: string | null;
+  note_code: string | null;
   confidence: number;
   notes: string;
 };
@@ -14,10 +15,13 @@ export type ReceiptAnalysis = {
 const SYSTEM_PROMPT = `Eres un verificador de comprobantes de pago bancarios de Nicaragua
 (LAFISE, BAC, BANPRO, Billetera Móvil, Binance Pay). Analiza la imagen y responde SOLO con JSON válido:
 {"is_receipt":boolean,"amount":number|null,"currency":"NIO"|"USD"|null,"bank":string|null,
-"reference":string|null,"date":string|null,"confidence":number,"notes":string}
+"reference":string|null,"date":string|null,"note_code":string|null,"confidence":number,"notes":string}
 - amount es el monto transferido en números (sin símbolos).
+- note_code es el código corto de 6 letras que el cliente escribió en el concepto/nota/descripción
+  del pago (ej: "xyuadz"). Devuélvelo en minúsculas y sin espacios; null si no aparece.
 - confidence entre 0 y 1 según qué tan legible y auténtico se ve el comprobante.
 - Si la imagen está editada, borrosa, o no es un comprobante, is_receipt=false y explica en notes.`;
+
 
 export async function analyzeReceiptImage(imageDataUrl: string): Promise<ReceiptAnalysis> {
   const apiKey = process.env['LOVABLE_API_KEY'];
@@ -59,6 +63,8 @@ export async function analyzeReceiptImage(imageDataUrl: string): Promise<Receipt
     bank: parsed.bank ?? null,
     reference: parsed.reference ?? null,
     date: parsed.date ?? null,
+    note_code: typeof parsed.note_code === 'string' ? parsed.note_code.trim().toLowerCase() : null,
+
     confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
     notes: parsed.notes ?? '',
   };
