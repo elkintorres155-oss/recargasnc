@@ -437,22 +437,55 @@ export type Database = {
         }
         Relationships: []
       }
+      topup_codes: {
+        Row: {
+          amount_nio: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_nio?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_nio?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       topup_requests: {
         Row: {
           ai_amount_nio: number | null
           ai_bank: string
           ai_confidence: number
           ai_date: string
+          ai_note_code: string
           ai_notes: string
           ai_reference: string
           ai_verdict: string
           amount_nio: number
+          auto_approved: boolean
           auto_source: string
           created_at: string
           external_tx_id: string | null
           id: string
           method_code: string
           method_name: string
+          note_code: string
           receipt_path: string
           reference: string
           review_reason: string
@@ -467,16 +500,19 @@ export type Database = {
           ai_bank?: string
           ai_confidence?: number
           ai_date?: string
+          ai_note_code?: string
           ai_notes?: string
           ai_reference?: string
           ai_verdict?: string
           amount_nio: number
+          auto_approved?: boolean
           auto_source?: string
           created_at?: string
           external_tx_id?: string | null
           id?: string
           method_code?: string
           method_name?: string
+          note_code?: string
           receipt_path?: string
           reference?: string
           review_reason?: string
@@ -491,16 +527,19 @@ export type Database = {
           ai_bank?: string
           ai_confidence?: number
           ai_date?: string
+          ai_note_code?: string
           ai_notes?: string
           ai_reference?: string
           ai_verdict?: string
           amount_nio?: number
+          auto_approved?: boolean
           auto_source?: string
           created_at?: string
           external_tx_id?: string | null
           id?: string
           method_code?: string
           method_name?: string
+          note_code?: string
           receipt_path?: string
           reference?: string
           review_reason?: string
