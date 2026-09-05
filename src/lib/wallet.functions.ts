@@ -58,17 +58,70 @@ export const getMyTopups = createServerFn({ method: 'GET' })
     return data ?? [];
   });
 
+/** Duración del código de nota que el cliente debe escribir en el concepto del pago. */
+export const TOPUP_CODE_TTL_MS = 5 * 60 * 1000;
+
+function randomCode() {
+  const letters = 'abcdefghijkmnpqrstuvwxyz';
+  let out = '';
+  for (let i = 0; i < 6; i++) out += letters[Math.floor(Math.random() * letters.length)];
+  return out;
+}
+
+/**
+ * Devuelve el código de nota vigente del usuario (o genera uno nuevo de 6 letras
+ * con 5 minutos de validez). El cliente debe escribirlo en el concepto del pago
+ * y la IA lo lee en el comprobante para acreditar el saldo automáticamente.
+ */
+export const getTopupCode = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ force: z.boolean().default(false) }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const nowIso = new Date().toISOString();
+
+    if (!data.force) {
+      const { data: active } = await supabaseAdmin
+        .from('topup_codes')
+        .select('code, expires_at')
+        .eq('user_id', userId)
+        .is('used_at', null)
+        .gt('expires_at', nowIso)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (active) return { code: active.code, expiresAt: active.expires_at };
+    }
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = randomCode();
+      const expiresAt = new Date(Date.now() + TOPUP_CODE_TTL_MS).toISOString();
+      const { data: row, error } = await supabaseAdmin
+        .from('topup_codes')
+        .insert({ user_id: userId, code, expires_at: expiresAt })
+        .select('code, expires_at')
+        .maybeSingle();
+      if (!error && row) return { code: row.code, expiresAt: row.expires_at };
+    }
+    throw new Error('No se pudo generar el código, intenta de nuevo.');
+  });
+
 const topupSchema = z.object({
   method: z.enum(TOPUP_METHODS),
   methodName: z.string().max(60).default(''),
   amountNio: z.number().positive().max(500000),
   reference: z.string().max(120).default(''),
+  noteCode: z.string().max(16).default(''),
   imageDataUrl: z
     .string()
     .regex(/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/, 'Imagen inválida')
     .max(8_000_000)
     .optional(),
 });
+
 
 /**
  * Crea una solicitud de recarga de saldo (pago manual: BAC / LAFISE / BANPRO / Binance manual).
