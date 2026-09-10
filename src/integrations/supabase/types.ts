@@ -294,6 +294,87 @@ export type Database = {
         }
         Relationships: []
       }
+      reseller_applications: {
+        Row: {
+          business_name: string
+          city: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          monthly_volume: string
+          notes: string
+          phone: string
+          review_reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["reseller_app_status"]
+          tier: Database["public"]["Enums"]["reseller_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name?: string
+          city?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          monthly_volume?: string
+          notes?: string
+          phone?: string
+          review_reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["reseller_app_status"]
+          tier: Database["public"]["Enums"]["reseller_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          city?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          monthly_volume?: string
+          notes?: string
+          phone?: string
+          review_reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["reseller_app_status"]
+          tier?: Database["public"]["Enums"]["reseller_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reseller_members: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          tier: Database["public"]["Enums"]["reseller_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          tier: Database["public"]["Enums"]["reseller_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          tier?: Database["public"]["Enums"]["reseller_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stock_accounts: {
         Row: {
           assigned_at: string | null
@@ -764,6 +845,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_reseller_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["reseller_tier"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -783,6 +868,8 @@ export type Database = {
         | "completed"
         | "failed"
         | "refunded"
+      reseller_app_status: "pending" | "approved" | "rejected"
+      reseller_tier: "pro" | "wholesale"
       stock_action:
         | "created"
         | "updated"
@@ -930,6 +1017,8 @@ export const Constants = {
         "failed",
         "refunded",
       ],
+      reseller_app_status: ["pending", "approved", "rejected"],
+      reseller_tier: ["pro", "wholesale"],
       stock_action: [
         "created",
         "updated",

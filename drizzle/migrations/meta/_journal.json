@@ -15,6 +15,13 @@
       "when": 1788569079423,
       "tag": "0001_topup_note_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789019249311,
+      "tag": "0002_reseller_program",
+      "breakpoints": true
     }
   ]
 }
