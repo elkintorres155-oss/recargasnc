@@ -8,7 +8,9 @@ import gift1 from "@/assets/gift-1.jpg";
 export type Pack = {
   id: string;
   label: string;
-  price: number; // córdobas (NIO)
+  price: number; // córdobas (NIO) — precio público
+  pricePro?: number; // precio para Revendedor PRO
+  priceWholesale?: number; // precio para Mayorista
   sku?: string; // código/SKU del proveedor (ej. FlashTopUp)
   requiresStock?: boolean; // se entrega con una cuenta del inventario
   serviceSlug?: string; // servicio del inventario (netflix, spotify, disney...)

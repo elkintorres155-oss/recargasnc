@@ -22,9 +22,18 @@ const purchaseSchema = z.object({
 export const purchaseWithBalance = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => purchaseSchema.parse(input))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data: input, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+
+    // El precio SIEMPRE se calcula en el servidor según el nivel del usuario.
+    const { resolvePackPrice } = await import('./reseller.server');
+    const official = await resolvePackPrice({
+      userId,
+      productId: input.productId,
+      packId: input.packId,
+    });
+    const data = { ...input, amountNio: official.price ?? input.amountNio };
 
     const { data: wallet } = await supabaseAdmin
       .from('wallets')
