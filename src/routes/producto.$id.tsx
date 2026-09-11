@@ -10,6 +10,8 @@ import { useSessionState } from "@/hooks/use-session";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { findProduct } from "@/components/store/data";
 import { formatC, useStore } from "@/lib/store-state";
+import { useResellerTier } from "@/hooks/use-reseller";
+import { packPrice, tierLabel } from "@/lib/pricing";
 
 export const Route = createFileRoute("/producto/$id")({
   head: ({ params }) => {
@@ -37,6 +39,7 @@ function ProductPage() {
   const { findItem, settings } = useStore();
   const base = findItem(id);
 
+  const { tier } = useResellerTier();
   const [packId, setPackId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
   const [phone, setPhone] = useState("");
@@ -172,7 +175,7 @@ function ProductPage() {
           packSku: pack.sku ?? "",
           playerId: playerId.trim(),
           customerPhone: cleanPhone,
-          amountNio: pack.price,
+          amountNio: packPrice(pack, tier),
           productImageUrl: base.image.startsWith("http")
             ? base.image
             : `${window.location.origin}${base.image}`,
@@ -231,6 +234,11 @@ function ProductPage() {
             <h2 className="mt-6 text-sm font-extrabold uppercase tracking-wide">
               1. Elige tu paquete
             </h2>
+            {tier !== "public" ? (
+              <p className="mt-2 text-xs font-bold text-primary">
+                Precios de {tierLabel[tier]} aplicados a tu cuenta.
+              </p>
+            ) : null}
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {base.packs.map((p) => (
                 <button
@@ -245,7 +253,7 @@ function ProductPage() {
                 >
                   <span className="block text-sm font-bold">{p.label}</span>
                   <span className="mt-1 block text-sm font-extrabold text-primary">
-                    {formatC(p.price)}
+                    {formatC(packPrice(p, tier))}
                   </span>
                 </button>
               ))}
@@ -356,9 +364,10 @@ function ProductPage() {
                     Recargar saldo
                   </Link>
                 </div>
-                {pack && wallet.data.balance < pack.price ? (
+                {pack && wallet.data.balance < packPrice(pack, tier) ? (
                   <p className="mt-2 text-xs font-semibold text-destructive">
-                    Saldo insuficiente. Te faltan {formatC(pack.price - wallet.data.balance)} para
+                    Saldo insuficiente. Te faltan{" "}
+                    {formatC(packPrice(pack, tier) - wallet.data.balance)} para
                     completar esta compra.
                   </p>
                 ) : null}
@@ -420,7 +429,7 @@ function ProductPage() {
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Total a pagar</p>
                 <p className="text-2xl font-extrabold text-primary">
-                  {pack ? formatC(pack.price) : "—"}
+                  {pack ? formatC(packPrice(pack, tier)) : "—"}
                 </p>
               </div>
               <button
@@ -433,7 +442,7 @@ function ProductPage() {
               </button>
               <a
                 href={`https://wa.me/${settings.whatsapp.replace(/[^\d]/g, "")}?text=${encodeURIComponent(
-                  `Hola ${settings.storeName}, quiero hacer un pedido:\n\n• Producto: ${base.name}\n• Paquete: ${pack ? `${pack.label} — ${formatC(pack.price)}` : "—"}${
+                  `Hola ${settings.storeName}, quiero hacer un pedido:\n\n• Producto: ${base.name}\n• Paquete: ${pack ? `${pack.label} — ${formatC(packPrice(pack, tier))}` : "—"}${
                     base.needsId ? `\n• ID de jugador: ${trimmedId || "(pendiente)"}${nickname ? ` (${nickname})` : ""}` : ""
                   }${cleanPhone ? `\n• Teléfono: ${cleanPhone}` : ""}`,
                 )}`}
