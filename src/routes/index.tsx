@@ -5,7 +5,6 @@ import { Catalog } from "@/components/store/Catalog";
 import { ResellerBanner } from "@/components/store/ResellerProgram";
 import { useStore } from "@/lib/store-state";
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
