@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Product } from "./data";
 import { formatC, useStore } from "@/lib/store-state";
+import { useResellerTier } from "@/hooks/use-reseller";
+import { packPrice, type PriceTier } from "@/lib/pricing";
 
-function ProductCard({ item }: { item: Product }) {
-  const min = Math.min(...item.packs.map((p) => p.price));
+function ProductCard({ item, tier }: { item: Product; tier: PriceTier }) {
+  const min = Math.min(...item.packs.map((p) => packPrice(p, tier)));
   return (
     <Link
       to="/producto/$id"
@@ -37,6 +39,7 @@ function ProductCard({ item }: { item: Product }) {
 
 export function Catalog() {
   const { categories } = useStore();
+  const { tier } = useResellerTier();
   const [active, setActive] = useState(categories[0]!.id);
   const [query, setQuery] = useState("");
   const category = categories.find((c) => c.id === active) ?? categories[0]!;
@@ -109,7 +112,7 @@ export function Catalog() {
           className="reveal-stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
         >
           {items.map((item) => (
-            <ProductCard key={item.id} item={item} />
+            <ProductCard key={item.id} item={item} tier={tier} />
           ))}
         </div>
       )}

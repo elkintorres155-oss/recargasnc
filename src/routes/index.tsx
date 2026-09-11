@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { StoreHeader } from "@/components/store/StoreHeader";
 import { Catalog } from "@/components/store/Catalog";
+import { ResellerBanner } from "@/components/store/ResellerProgram";
 import { useStore } from "@/lib/store-state";
 import banner1 from "@/assets/banner-1.jpg";
 
@@ -72,6 +73,8 @@ function Index() {
               </button>
             </div>
           ) : null}
+
+          <ResellerBanner />
         </section>
 
         <section className="mx-auto max-w-3xl px-4 py-14 text-center">
