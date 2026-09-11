@@ -7,6 +7,7 @@ import { AdminWallets } from "@/components/store/AdminWallets";
 import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { AdminStock } from "@/components/store/AdminStock";
 import { AdminRaffle } from "@/components/store/AdminRaffle";
+import { AdminResellers } from "@/components/store/AdminResellers";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
@@ -41,6 +42,7 @@ const TABS = [
   { id: "saldos", label: "💰 Recargas de saldo" },
   { id: "stock", label: "🎬 Stock de cuentas" },
   { id: "ruleta", label: "🎡 Ruleta semanal" },
+  { id: "revendedores", label: "🤝 Revendedores" },
   { id: "proveedor", label: "🔌 Proveedor" },
 ] as const;
 
@@ -617,6 +619,31 @@ function AdminPage() {
                             className={inputCls}
                           />
                           <input
+                            type="number"
+                            min={0}
+                            value={k.pricePro ?? ""}
+                            onChange={(e) =>
+                              patchPack(cat, pi, ki, {
+                                pricePro: e.target.value === "" ? undefined : Number(e.target.value),
+                              })
+                            }
+                            placeholder="Precio PRO"
+                            className={inputCls}
+                          />
+                          <input
+                            type="number"
+                            min={0}
+                            value={k.priceWholesale ?? ""}
+                            onChange={(e) =>
+                              patchPack(cat, pi, ki, {
+                                priceWholesale:
+                                  e.target.value === "" ? undefined : Number(e.target.value),
+                              })
+                            }
+                            placeholder="Precio mayorista"
+                            className={inputCls}
+                          />
+                          <input
                             value={k.sku ?? ""}
                             onChange={(e) => patchPack(cat, pi, ki, { sku: e.target.value })}
                             placeholder="SKU proveedor"
@@ -709,6 +736,8 @@ function AdminPage() {
         {tab === "stock" ? <AdminStock /> : null}
 
         {tab === "ruleta" ? <AdminRaffle /> : null}
+
+        {tab === "revendedores" ? <AdminResellers /> : null}
 
         {tab === "proveedor" ? <ProviderCatalog /> : null}
 
