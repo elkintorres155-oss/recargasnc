@@ -621,10 +621,10 @@ function AdminPage() {
                           <input
                             type="number"
                             min={0}
-                            value={k.pricePro ?? ""}
+                            value={k.pricePro ?? 0}
                             onChange={(e) =>
                               patchPack(cat, pi, ki, {
-                                pricePro: e.target.value === "" ? undefined : Number(e.target.value),
+                                pricePro: Number(e.target.value) || 0,
                               })
                             }
                             placeholder="Precio PRO"
@@ -633,11 +633,10 @@ function AdminPage() {
                           <input
                             type="number"
                             min={0}
-                            value={k.priceWholesale ?? ""}
+                            value={k.priceWholesale ?? 0}
                             onChange={(e) =>
                               patchPack(cat, pi, ki, {
-                                priceWholesale:
-                                  e.target.value === "" ? undefined : Number(e.target.value),
+                                priceWholesale: Number(e.target.value) || 0,
                               })
                             }
                             placeholder="Precio mayorista"
