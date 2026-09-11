@@ -4,7 +4,7 @@ import { StoreHeader } from "@/components/store/StoreHeader";
 import { Catalog } from "@/components/store/Catalog";
 import { ResellerBanner } from "@/components/store/ResellerProgram";
 import { useStore } from "@/lib/store-state";
-import banner1 from "@/assets/banner-1.jpg";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
