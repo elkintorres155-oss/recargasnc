@@ -645,9 +645,33 @@ function AdminPage() {
                           <input
                             value={k.sku ?? ""}
                             onChange={(e) => patchPack(cat, pi, ki, { sku: e.target.value })}
-                            placeholder="SKU proveedor"
+                            placeholder={
+                              k.provider === "fzr" ? "offer_id (FZR)" : "SKU proveedor"
+                            }
                             className={inputCls}
                           />
+                          <select
+                            value={k.provider ?? "flashtopup"}
+                            onChange={(e) =>
+                              patchPack(cat, pi, ki, {
+                                provider: e.target.value as "flashtopup" | "fzr",
+                              })
+                            }
+                            className={inputCls}
+                          >
+                            <option value="flashtopup">Proveedor 1 · FlashTopUp</option>
+                            <option value="fzr">Proveedor 2 · FZR</option>
+                          </select>
+                          {k.provider === "fzr" ? (
+                            <input
+                              value={k.fzrCategory ?? ""}
+                              onChange={(e) =>
+                                patchPack(cat, pi, ki, { fzrCategory: e.target.value })
+                              }
+                              placeholder="Juego FZR (ej. free_fire_latam)"
+                              className={inputCls}
+                            />
+                          ) : null}
                           <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold">
                             <input
                               type="checkbox"

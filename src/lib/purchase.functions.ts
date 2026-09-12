@@ -186,12 +186,17 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       };
     }
 
+    const { getPackProviderConfig } = await import('./provider-config.server');
+    const providerCfg = await getPackProviderConfig(data.productId, data.packId);
+
     const { dispatchToProvider } = await import('./fulfillment.server');
     const dispatch = await dispatchToProvider({
       orderId: order.id,
       productId: data.productId,
-      packId: data.packSku,
+      packId: providerCfg.sku || data.packSku,
       playerId: data.playerId,
+      provider: providerCfg.provider,
+      fzrCategory: providerCfg.fzrCategory,
     });
 
     if (dispatch.dispatched) {

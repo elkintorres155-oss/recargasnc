@@ -122,3 +122,54 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
         : 'El proveedor no reconoce este ID.',
     };
   });
+
+/** Juegos disponibles en el proveedor secundario (FZR). Solo administradores. */
+export const listFzrCategories = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { cursor?: string } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { fzrCategories } = await import('./fzr.server');
+    const res = await fzrCategories(data.cursor);
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Denominaciones (offer_id) y campos de un juego del proveedor secundario. */
+export const listFzrOffers = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { categoryId: string }) => {
+    const categoryId = String(input?.categoryId ?? '').trim();
+    if (!categoryId) throw new Error('Falta el juego (category_id).');
+    return { categoryId };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { fzrOffers } = await import('./fzr.server');
+    const res = await fzrOffers(data.categoryId);
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Saldo de la cuenta en el proveedor secundario. */
+export const getFzrBalance = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { fzrBalance } = await import('./fzr.server');
+    const res = await fzrBalance();
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });

@@ -11,7 +11,9 @@ export type Pack = {
   price: number; // córdobas (NIO) — precio público
   pricePro?: number; // precio para Revendedor PRO
   priceWholesale?: number; // precio para Mayorista
-  sku?: string; // código/SKU del proveedor (ej. FlashTopUp)
+  sku?: string; // código/SKU del proveedor (FlashTopUp service_code o FZR offer_id)
+  provider?: "flashtopup" | "fzr"; // proveedor que hace la recarga
+  fzrCategory?: string; // category_id de FZR (ej. free_fire_latam)
   requiresStock?: boolean; // se entrega con una cuenta del inventario
   serviceSlug?: string; // servicio del inventario (netflix, spotify, disney...)
 };
