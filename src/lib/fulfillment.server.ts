@@ -227,3 +227,92 @@ export async function dispatchToProvider(input: {
   }
 }
 
+
+/**
+ * Despacho al proveedor secundario (FZR): POST /topups/order con
+ * category_id + offer_id + los campos que pide la categoría (player_id/user_id/server_id).
+ */
+async function dispatchToFzr(input: {
+  orderId: string;
+  packId: string;
+  playerId: string;
+  serverId?: string;
+  fzrCategory?: string;
+}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+  const { getFzrCredentials, fzrCategoryFields, fzrCreateOrder } = await import('./fzr.server');
+
+  if (!getFzrCredentials()) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message: 'Proveedor secundario no configurado. Se procesará manualmente.',
+    };
+  }
+
+  const categoryId = (input.fzrCategory || '').trim();
+  const offerId = (input.packId || '').trim();
+  if (!categoryId || !offerId) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message:
+        'Este paquete no tiene el juego o el código del proveedor secundario configurado. Se procesará manualmente.',
+    };
+  }
+
+  const rawPlayer = (input.playerId || '').trim();
+  const split = rawPlayer.match(/^(.+?)\s*[|(]\s*([A-Za-z0-9._-]{1,64})\s*\)?$/);
+  const userId = split ? split[1]!.trim() : rawPlayer;
+  const serverId = (input.serverId || split?.[2] || '').trim();
+
+  try {
+    let keys: string[] = [];
+    try {
+      keys = await fzrCategoryFields(categoryId);
+    } catch {
+      keys = [];
+    }
+    const fields: Record<string, string> = {};
+    for (const key of keys.length ? keys : ['player_id']) {
+      if (/server/i.test(key)) {
+        if (serverId) fields[key] = serverId;
+      } else {
+        fields[key] = userId;
+      }
+    }
+
+    const res = await fzrCreateOrder({ category_id: categoryId, offer_id: offerId, fields });
+    const body = res.body as {
+      ok?: boolean;
+      order_id?: string;
+      order?: { order_id?: string; status?: string };
+      status?: string;
+      error?: string;
+      message?: string;
+    };
+    const providerOrderId = body?.order?.order_id ?? body?.order_id ?? null;
+    const status = String(body?.order?.status ?? body?.status ?? '').toLowerCase();
+    const failed =
+      body?.ok === false ||
+      ['failed', 'rejected', 'cancelled', 'canceled', 'error'].includes(status);
+
+    if (!res.ok || failed) {
+      console.warn('[fzr] provider rejected order', { status: res.status, body: res.body });
+      const detail = body?.error ?? body?.message ?? '';
+      return {
+        dispatched: false,
+        providerOrderId: null,
+        message: `El proveedor rechazó la recarga (${res.status})${detail ? `: ${detail}` : ''}`,
+      };
+    }
+
+    return { dispatched: true, providerOrderId, message: 'Recarga enviada al proveedor.' };
+  } catch (e) {
+    console.error('[fzr]', e);
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message: 'No se pudo contactar al proveedor; se procesará manualmente.',
+    };
+  }
+}
