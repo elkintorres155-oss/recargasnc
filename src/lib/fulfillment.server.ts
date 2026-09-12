@@ -120,7 +120,12 @@ export async function dispatchToProvider(input: {
   packId: string;
   playerId: string;
   serverId?: string;
+  /** Proveedor elegido para este paquete. */
+  provider?: 'flashtopup' | 'fzr';
+  /** category_id de FZR (solo proveedor secundario). */
+  fzrCategory?: string;
 }): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+  if (input.provider === 'fzr') return dispatchToFzr(input);
   const { getCredentials, signedRequest } = await import('./flashtopup.server');
   const creds = getCredentials();
   const orderPath = process.env['TOPUP_PROVIDER_ORDER_PATH'];
