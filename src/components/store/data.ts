@@ -57,13 +57,28 @@ const diamantes = packs([
   ["5600 Diamantes", 2950],
 ]);
 
-const robux = packs([
-  ["80 Robux", 45],
-  ["400 Robux", 210],
-  ["800 Robux", 400],
-  ["1700 Robux", 830],
-  ["4500 Robux", 2150],
-]);
+// Robux con despacho automático vía WDG (sku = product_id de WDG).
+const wdgPack = (label: string, price: number, productId: number): Pack => ({
+  id: slug(label),
+  label,
+  price,
+  sku: String(productId),
+  provider: "wdg",
+});
+
+const robux: Pack[] = [
+  wdgPack("50 Robux", 55, 285752),
+  wdgPack("100 Robux", 95, 285751),
+  wdgPack("200 Robux", 195, 237023),
+  wdgPack("800 Robux", 480, 237024),
+  wdgPack("1000 Robux", 610, 237025),
+  wdgPack("1500 Robux", 990, 237026),
+  wdgPack("2000 Robux", 1150, 237027),
+  wdgPack("2500 Robux", 1520, 237028),
+  wdgPack("3000 Robux", 1900, 237029),
+  wdgPack("4500 Robux", 2450, 237030),
+  wdgPack("10000 Robux", 4900, 237031),
+];
 
 const genericos = packs([
   ["Paquete pequeño", 120],
