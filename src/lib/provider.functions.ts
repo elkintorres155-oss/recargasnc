@@ -173,3 +173,49 @@ export const getFzrBalance = createServerFn({ method: 'GET' })
     const res = await fzrBalance();
     return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
   });
+
+/** Juegos/categorías del tercer proveedor (WDG). Solo administradores. */
+export const listWdgCategories = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { wdgCategories } = await import('./wdg.server');
+    const res = await wdgCategories();
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Productos/denominaciones del tercer proveedor (WDG). Solo administradores. */
+export const listWdgProducts = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { categoryId?: string } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { wdgProducts } = await import('./wdg.server');
+    const res = await wdgProducts(data.categoryId);
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Saldo de la cuenta en el tercer proveedor (WDG). */
+export const getWdgBalance = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { wdgBalance } = await import('./wdg.server');
+    const res = await wdgBalance();
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
