@@ -230,6 +230,82 @@ export async function dispatchToProvider(input: {
 
 
 /**
+ * Despacho al tercer proveedor (WDG): POST /purchase con
+ * product_id numérico (el SKU del paquete) + player_id.
+ */
+async function dispatchToWdg(input: {
+  orderId: string;
+  packId: string;
+  playerId: string;
+}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+  const { getWdgCredentials, wdgPurchase } = await import('./wdg.server');
+
+  if (!getWdgCredentials()) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message: 'Proveedor 3 (WDG) no configurado. Se procesará manualmente.',
+    };
+  }
+
+  const productId = Number((input.packId || '').trim());
+  if (!Number.isFinite(productId) || productId <= 0) {
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message:
+        'Este paquete no tiene el código numérico del proveedor 3 (WDG) configurado. Se procesará manualmente.',
+    };
+  }
+
+  const rawPlayer = (input.playerId || '').trim();
+  const split = rawPlayer.match(/^(.+?)\s*[|(]\s*([A-Za-z0-9._-]{1,64})\s*\)?$/);
+  const userId = split ? split[1]!.trim() : rawPlayer;
+
+  try {
+    const res = await wdgPurchase({
+      product_id: productId,
+      player_id: userId,
+      idempotencyKey: input.orderId,
+    });
+    const body = res.body as {
+      success?: boolean;
+      data?: { order_id?: string | number; id?: string | number; status?: string };
+      order_id?: string | number;
+      status?: string;
+      error?: { code?: string; message?: string };
+      message?: string;
+    };
+    const providerOrderIdRaw =
+      body?.data?.order_id ?? body?.data?.id ?? body?.order_id ?? null;
+    const providerOrderId = providerOrderIdRaw != null ? String(providerOrderIdRaw) : null;
+    const status = String(body?.data?.status ?? body?.status ?? '').toLowerCase();
+    const failed =
+      body?.success === false ||
+      ['failed', 'rejected', 'cancelled', 'canceled', 'error'].includes(status);
+
+    if (!res.ok || failed) {
+      console.warn('[wdg] provider rejected order', { status: res.status, body: res.body });
+      const detail = body?.error?.message ?? body?.message ?? '';
+      return {
+        dispatched: false,
+        providerOrderId: null,
+        message: `El proveedor rechazó la recarga (${res.status})${detail ? `: ${detail}` : ''}`,
+      };
+    }
+
+    return { dispatched: true, providerOrderId, message: 'Recarga enviada al proveedor.' };
+  } catch (e) {
+    console.error('[wdg]', e);
+    return {
+      dispatched: false,
+      providerOrderId: null,
+      message: 'No se pudo contactar al proveedor; se procesará manualmente.',
+    };
+  }
+}
+
+/**
  * Despacho al proveedor secundario (FZR): POST /topups/order con
  * category_id + offer_id + los campos que pide la categoría (player_id/user_id/server_id).
  */
