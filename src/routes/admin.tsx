@@ -646,7 +646,11 @@ function AdminPage() {
                             value={k.sku ?? ""}
                             onChange={(e) => patchPack(cat, pi, ki, { sku: e.target.value })}
                             placeholder={
-                              k.provider === "fzr" ? "offer_id (FZR)" : "SKU proveedor"
+                              k.provider === "fzr"
+                                ? "offer_id (FZR)"
+                                : k.provider === "wdg"
+                                  ? "product_id numérico (WDG)"
+                                  : "SKU proveedor"
                             }
                             className={inputCls}
                           />
@@ -654,13 +658,14 @@ function AdminPage() {
                             value={k.provider ?? "flashtopup"}
                             onChange={(e) =>
                               patchPack(cat, pi, ki, {
-                                provider: e.target.value as "flashtopup" | "fzr",
+                                provider: e.target.value as "flashtopup" | "fzr" | "wdg",
                               })
                             }
                             className={inputCls}
                           >
                             <option value="flashtopup">Proveedor 1 · FlashTopUp</option>
                             <option value="fzr">Proveedor 2 · FZR</option>
+                            <option value="wdg">Proveedor 3 · WDG</option>
                           </select>
                           {k.provider === "fzr" ? (
                             <input
