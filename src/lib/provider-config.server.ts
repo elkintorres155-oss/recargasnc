@@ -1,6 +1,6 @@
 // Server-only: qué proveedor entrega cada paquete (según el catálogo guardado).
 
-export type PackProvider = 'flashtopup' | 'fzr';
+export type PackProvider = 'flashtopup' | 'fzr' | 'wdg';
 
 export type PackProviderConfig = {
   provider: PackProvider;
@@ -27,8 +27,10 @@ export async function getPackProviderConfig(
       if (product?.id !== productId) continue;
       for (const pack of product?.packs ?? []) {
         if (pack?.id !== packId) continue;
+        const provider: PackProvider =
+          pack?.provider === 'fzr' ? 'fzr' : pack?.provider === 'wdg' ? 'wdg' : 'flashtopup';
         return {
-          provider: pack?.provider === 'fzr' ? 'fzr' : 'flashtopup',
+          provider,
           sku: String(pack?.sku ?? ''),
           fzrCategory: String(pack?.fzrCategory ?? product?.fzrCategory ?? ''),
         };
