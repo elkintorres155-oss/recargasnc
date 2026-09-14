@@ -33,26 +33,68 @@ export const listProviderServices = createServerFn({ method: 'GET' })
   });
 
 /**
- * POST /check-id — valida el ID de jugador (y servidor) contra el proveedor
- * antes de comprar. Requiere sesión para evitar abuso del endpoint.
+ * Valida el ID de jugador antes de comprar. Primero intenta FZR (fazercards)
+ * con POST /topups/validate-id; si el juego no está soportado, usa FlashTopUp.
+ * Requiere sesión para evitar abuso del endpoint.
  */
 export const checkPlayerId = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { serviceCode: string; userId: string; serverId?: string; validationCode?: string }) => {
+  .inputValidator((input: { serviceCode: string; userId: string; serverId?: string; validationCode?: string; productId?: string }) => {
     const serviceCode = String(input?.serviceCode ?? '').trim();
     const validationCode = String(input?.validationCode ?? '').trim() || serviceCode;
     const userId = String(input?.userId ?? '').trim();
     const serverId = String(input?.serverId ?? '').trim();
-    if (!serviceCode) throw new Error('Falta el código del paquete (SKU).');
+    const productId = String(input?.productId ?? '').trim();
+    if (!serviceCode && !productId) throw new Error('Falta el código del paquete (SKU).');
     if (!userId || userId.length > 64) throw new Error('ID de jugador inválido.');
     if (serverId.length > 64) throw new Error('ID de servidor inválido.');
-    return { serviceCode, userId, serverId, validationCode };
+    return { serviceCode, userId, serverId, validationCode, productId };
   })
   .handler(async ({ data }) => {
+    // 1) FZR (fazercards)
+    const fzr = await import('./fzr.server');
+    if (fzr.getFzrCredentials()) {
+      const category = fzr.fzrValidationCategoryFor(data.productId, data.serviceCode);
+      if (category) {
+        try {
+          const res = await fzr.fzrValidateId(category, data.userId, data.serverId || undefined);
+          const body = res.body as {
+            ok?: boolean;
+            valid?: boolean;
+            player_name?: string;
+            region?: string;
+            error?: string;
+          };
+          if (res.ok && body?.valid) {
+            const nickname = body.player_name ?? null;
+            return {
+              ok: true,
+              valid: true,
+              nickname,
+              message: nickname ? `Cuenta encontrada: ${nickname}` : 'ID válido.',
+            };
+          }
+          return {
+            ok: true,
+            valid: false,
+            nickname: null as string | null,
+            message:
+              typeof body?.error === 'string' && body.error
+                ? 'No pudimos validar este ID. Revísalo e intenta de nuevo.'
+                : 'El proveedor no reconoce este ID.',
+          };
+        } catch {
+          /* si FZR falla, seguimos con FlashTopUp */
+        }
+      }
+    }
+
+    // 2) FlashTopUp (respaldo)
     const { getCredentials, signedRequest, signedGet } = await import('./flashtopup.server');
     if (!getCredentials()) {
       return { ok: false, valid: false, nickname: null as string | null, message: 'Proveedor no configurado.' };
     }
+
 
     // El proveedor valida con `validation_code` (p. ej. "freefire_latam"),
     // que vive en GET /products, no con el SKU del paquete.
