@@ -242,7 +242,12 @@ async function dispatchToWdg(input: {
   orderId: string;
   packId: string;
   playerId: string;
-}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+}): Promise<{
+  dispatched: boolean;
+  providerOrderId: string | null;
+  message: string;
+  redeemCode?: string | null;
+}> {
   const { getWdgCredentials, wdgPurchase } = await import('./wdg.server');
 
   if (!getWdgCredentials()) {
