@@ -124,7 +124,12 @@ export async function dispatchToProvider(input: {
   provider?: 'flashtopup' | 'fzr' | 'wdg';
   /** category_id de FZR (solo proveedor secundario). */
   fzrCategory?: string;
-}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+}): Promise<{
+  dispatched: boolean;
+  providerOrderId: string | null;
+  message: string;
+  redeemCode?: string | null;
+}> {
   if (input.provider === 'fzr') return dispatchToFzr(input);
   if (input.provider === 'wdg') return dispatchToWdg(input);
   const { getCredentials, signedRequest } = await import('./flashtopup.server');
@@ -237,7 +242,12 @@ async function dispatchToWdg(input: {
   orderId: string;
   packId: string;
   playerId: string;
-}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+}): Promise<{
+  dispatched: boolean;
+  providerOrderId: string | null;
+  message: string;
+  redeemCode?: string | null;
+}> {
   const { getWdgCredentials, wdgPurchase } = await import('./wdg.server');
 
   if (!getWdgCredentials()) {
@@ -270,9 +280,21 @@ async function dispatchToWdg(input: {
     });
     const body = res.body as {
       success?: boolean;
-      data?: { order_id?: string | number; id?: string | number; status?: string };
+      data?: {
+        order_id?: string | number;
+        id?: string | number;
+        status?: string;
+        code?: string;
+        codes?: unknown;
+        redeem_code?: string;
+        pin?: string;
+        serial?: string;
+        voucher?: string;
+        credentials?: unknown;
+      };
       order_id?: string | number;
       status?: string;
+      code?: string;
       error?: { code?: string; message?: string };
       message?: string;
     };
@@ -294,7 +316,29 @@ async function dispatchToWdg(input: {
       };
     }
 
-    return { dispatched: true, providerOrderId, message: 'Recarga enviada al proveedor.' };
+    // Algunos productos (ej. Robux) se entregan como código canjeable.
+    const d = body?.data ?? {};
+    const fromList = Array.isArray(d.codes)
+      ? d.codes
+          .map((c) =>
+            typeof c === 'string'
+              ? c
+              : typeof (c as { code?: string })?.code === 'string'
+                ? (c as { code: string }).code
+                : '',
+          )
+          .filter(Boolean)
+          .join('\n')
+      : '';
+    const redeemCode =
+      (d.redeem_code ?? d.code ?? d.voucher ?? d.serial ?? d.pin ?? fromList ?? '') || null;
+
+    return {
+      dispatched: true,
+      providerOrderId,
+      redeemCode,
+      message: 'Recarga enviada al proveedor.',
+    };
   } catch (e) {
     console.error('[wdg]', e);
     return {

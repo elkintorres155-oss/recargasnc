@@ -231,19 +231,24 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
         emailNote = e instanceof Error ? e.message : 'No se pudo enviar la factura.';
       }
 
+      const redeemCode = dispatch.redeemCode ?? null;
+
       await supabaseAdmin
         .from('orders')
         .update({
-          status: 'provider_processing',
+          status: redeemCode ? 'completed' : 'provider_processing',
           provider_order_id: dispatch.providerOrderId,
-          status_reason: 'Recarga aceptada y en proceso por el proveedor.',
+          status_reason: redeemCode
+            ? `Código entregado: ${redeemCode}`
+            : 'Recarga aceptada y en proceso por el proveedor.',
         })
         .eq('id', order.id);
       return {
         ok: true as const,
         orderCode: order.order_code,
-        status: 'provider_processing',
+        status: redeemCode ? 'completed' : 'provider_processing',
         message: 'Tu recarga se realizó correctamente.',
+        redeemCode,
         email: emailSent,
         emailMessage: emailNote,
       };
