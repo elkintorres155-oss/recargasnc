@@ -316,7 +316,29 @@ async function dispatchToWdg(input: {
       };
     }
 
-    return { dispatched: true, providerOrderId, message: 'Recarga enviada al proveedor.' };
+    // Algunos productos (ej. Robux) se entregan como código canjeable.
+    const d = body?.data ?? {};
+    const fromList = Array.isArray(d.codes)
+      ? d.codes
+          .map((c) =>
+            typeof c === 'string'
+              ? c
+              : typeof (c as { code?: string })?.code === 'string'
+                ? (c as { code: string }).code
+                : '',
+          )
+          .filter(Boolean)
+          .join('\n')
+      : '';
+    const redeemCode =
+      (d.redeem_code ?? d.code ?? d.voucher ?? d.serial ?? d.pin ?? fromList ?? '') || null;
+
+    return {
+      dispatched: true,
+      providerOrderId,
+      redeemCode,
+      message: 'Recarga enviada al proveedor.',
+    };
   } catch (e) {
     console.error('[wdg]', e);
     return {
