@@ -190,6 +190,7 @@ function ProductPage() {
         setError(res.message);
       } else {
         if ("account" in res && res.account) setAccount(res.account);
+        if ("redeemCode" in res && res.redeemCode) setRedeemCode(res.redeemCode);
         setResult(
           "account" in res && res.account
             ? "¡Listo! Tu compra se realizó correctamente."
