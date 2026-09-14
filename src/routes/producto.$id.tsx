@@ -379,6 +379,23 @@ function ProductPage() {
             {result ? (
               <div className="mt-4 rounded-2xl border border-primary/40 bg-primary/10 p-4">
                 <p className="text-sm font-semibold text-primary">{result}</p>
+                {redeemCode ? (
+                  <div className="mt-3 rounded-xl border border-border bg-card/80 p-4">
+                    <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                      Tu código para canjear
+                    </p>
+                    <p className="mt-2 font-mono text-base font-bold break-all select-all whitespace-pre-line">
+                      {redeemCode}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Guárdalo bien. También queda en{" "}
+                      <Link to="/mis-pedidos" className="font-bold text-primary">
+                        Mis pedidos
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                ) : null}
                 {account ? (
                   <div className="mt-3 rounded-xl border border-border bg-card/80 p-4">
                     <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
