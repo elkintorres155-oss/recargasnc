@@ -280,9 +280,21 @@ async function dispatchToWdg(input: {
     });
     const body = res.body as {
       success?: boolean;
-      data?: { order_id?: string | number; id?: string | number; status?: string };
+      data?: {
+        order_id?: string | number;
+        id?: string | number;
+        status?: string;
+        code?: string;
+        codes?: unknown;
+        redeem_code?: string;
+        pin?: string;
+        serial?: string;
+        voucher?: string;
+        credentials?: unknown;
+      };
       order_id?: string | number;
       status?: string;
+      code?: string;
       error?: { code?: string; message?: string };
       message?: string;
     };
