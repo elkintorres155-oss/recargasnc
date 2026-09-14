@@ -55,6 +55,7 @@ function ProductPage() {
     notes: string;
     expiresAt: string | null;
   } | null>(null);
+  const [redeemCode, setRedeemCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
   const [checkMsg, setCheckMsg] = useState("");
