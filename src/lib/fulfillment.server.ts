@@ -124,7 +124,12 @@ export async function dispatchToProvider(input: {
   provider?: 'flashtopup' | 'fzr' | 'wdg';
   /** category_id de FZR (solo proveedor secundario). */
   fzrCategory?: string;
-}): Promise<{ dispatched: boolean; providerOrderId: string | null; message: string }> {
+}): Promise<{
+  dispatched: boolean;
+  providerOrderId: string | null;
+  message: string;
+  redeemCode?: string | null;
+}> {
   if (input.provider === 'fzr') return dispatchToFzr(input);
   if (input.provider === 'wdg') return dispatchToWdg(input);
   const { getCredentials, signedRequest } = await import('./flashtopup.server');
