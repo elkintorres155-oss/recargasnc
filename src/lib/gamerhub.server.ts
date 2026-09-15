@@ -12,7 +12,7 @@ type Creds = { baseUrl: string; apiKey: string; apiSecret: string };
 export function getGamerHubCredentials(): Creds | null {
   const apiKey = process.env['GAMERHUB_API_KEY'];
   const apiSecret = process.env['GAMERHUB_API_SECRET'];
-  const baseUrl = process.env['GAMERHUB_BASE_URL'] ?? 'https://portal.gamerhubstore.shop/api/v1';
+  const baseUrl = process.env['GAMERHUB_BASE_URL'] ?? 'https://portal.gamerhubstore.shop/v1';
   if (!apiKey || !apiSecret) return null;
   return { apiKey, apiSecret, baseUrl: baseUrl.replace(/\/$/, '') };
 }
