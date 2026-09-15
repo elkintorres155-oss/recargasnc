@@ -76,7 +76,7 @@ async function request(
 
 /** GET firmado genérico (solo lectura). */
 export const gamerHubGet = (path: string, query?: Record<string, string | number | undefined>) =>
-  request('GET', path, { query });
+  request('GET', path, query ? { query } : undefined);
 
 /** Saldo de la cuenta (lectura, no consume nada). */
 export const gamerHubBalance = () => request('GET', '/balance');
