@@ -52,15 +52,48 @@ async function request(
   const payload = `${creds.apiKey}|${timestamp}|${rawBody}`;
   const signature = await hmacSha256Hex(creds.apiSecret, payload);
 
+  const headers = {
+    'X-API-Key': creds.apiKey,
+    'X-Timestamp': timestamp,
+    'X-Signature': signature,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  // Si hay relay/proxy con IP fija (TOPUP_PROXY_URL), salimos por ahí:
+  // GamerHub exige lista blanca de IP y las IPs de salida del hosting varían.
+  const proxyUrl = process.env['TOPUP_PROXY_URL'];
+  const proxySecret = process.env['TOPUP_PROXY_SECRET'];
+  if (proxyUrl) {
+    const relayRes = await fetch(proxyUrl.replace(/\/$/, ''), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
+      },
+      body: JSON.stringify({ url, method, headers, ...(method === 'POST' ? { body: rawBody } : {}) }),
+    });
+    const relayText = await relayRes.text();
+    let relayJson: { status?: number; body?: string } = {};
+    try {
+      relayJson = JSON.parse(relayText);
+    } catch {
+      /* relay no devolvió JSON */
+    }
+    const status = Number(relayJson.status ?? relayRes.status);
+    const text = typeof relayJson.body === 'string' ? relayJson.body : relayText;
+    let parsed: unknown = text;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      /* respuesta no JSON */
+    }
+    return { ok: status >= 200 && status < 300, status, body: parsed };
+  }
+
   const res = await fetch(url, {
     method,
-    headers: {
-      'X-API-Key': creds.apiKey,
-      'X-Timestamp': timestamp,
-      'X-Signature': signature,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers,
     ...(method === 'POST' ? { body: rawBody } : {}),
   });
 
