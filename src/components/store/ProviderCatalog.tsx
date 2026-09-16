@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { listProviderProducts, listProviderServices } from "@/lib/provider.functions";
+import { getGamerHubBalance, listGamerHubProducts, listProviderProducts, listProviderServices } from "@/lib/provider.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 const inputCls =
@@ -9,6 +9,8 @@ const inputCls =
 export function ProviderCatalog() {
   const getProducts = useServerFn(listProviderProducts);
   const getServices = useServerFn(listProviderServices);
+  const getGhBalance = useServerFn(getGamerHubBalance);
+  const getGhProducts = useServerFn(listGamerHubProducts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
@@ -79,6 +81,26 @@ export function ProviderCatalog() {
           className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
         >
           Ver servicios
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <span className="text-xs font-bold text-muted-foreground">GamerHub:</span>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => run(() => getGhBalance())}
+          className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+        >
+          Probar saldo
+        </button>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => run(() => getGhProducts())}
+          className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
+        >
+          Ver productos
         </button>
       </div>
 
