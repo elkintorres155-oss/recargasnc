@@ -261,3 +261,33 @@ export const getWdgBalance = createServerFn({ method: 'GET' })
     const res = await wdgBalance();
     return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
   });
+
+/** Prueba de autenticación GamerHub: saldo (GET de solo lectura). Solo administradores. */
+export const getGamerHubBalance = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { gamerHubBalance } = await import('./gamerhub.server');
+    const res = await gamerHubBalance();
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Catálogo de productos de GamerHub (GET de solo lectura). Solo administradores. */
+export const listGamerHubProducts = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', {
+      _user_id: context.userId,
+      _role: 'admin',
+    });
+    if (!isAdmin) throw new Error('Solo administradores');
+
+    const { gamerHubProducts } = await import('./gamerhub.server');
+    const res = await gamerHubProducts();
+    return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
