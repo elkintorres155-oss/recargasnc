@@ -97,7 +97,7 @@ export function ProviderCatalog() {
         <button
           type="button"
           disabled={loading}
-          onClick={() => run(() => useServerFn(listGamerHubProducts)())}
+          onClick={() => run(() => getGhProducts())}
           className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
         >
           Ver productos
