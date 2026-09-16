@@ -7,7 +7,15 @@ import http from 'node:http';
 
 const PORT = Number(process.env.PORT || 8787);
 const SECRET = process.env.RELAY_SECRET || '';
-const ALLOWED_HOST = process.env.ALLOWED_HOST || 'api.flashtopup.com';
+// Varios proveedores separados por coma (ALLOWED_HOSTS) o uno solo (ALLOWED_HOST).
+const ALLOWED_HOSTS = (
+  process.env.ALLOWED_HOSTS ||
+  process.env.ALLOWED_HOST ||
+  'api.flashtopup.com,portal.gamerhubstore.shop'
+)
+  .split(',')
+  .map((h) => h.trim())
+  .filter(Boolean);
 
 const server = http.createServer(async (req, res) => {
   if (req.method !== 'POST') {
