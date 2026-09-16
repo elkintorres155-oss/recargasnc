@@ -9,6 +9,8 @@ const inputCls =
 export function ProviderCatalog() {
   const getProducts = useServerFn(listProviderProducts);
   const getServices = useServerFn(listProviderServices);
+  const getGhBalance = useServerFn(getGamerHubBalance);
+  const getGhProducts = useServerFn(listGamerHubProducts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
@@ -87,7 +89,7 @@ export function ProviderCatalog() {
         <button
           type="button"
           disabled={loading}
-          onClick={() => run(() => useServerFn(getGamerHubBalance)())}
+          onClick={() => run(() => getGhBalance())}
           className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
         >
           Probar saldo
