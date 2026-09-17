@@ -65,14 +65,27 @@ async function request(
   const proxyUrl = process.env['TOPUP_PROXY_URL'];
   const proxySecret = process.env['TOPUP_PROXY_SECRET'];
   if (proxyUrl) {
-    const relayRes = await fetch(proxyUrl.replace(/\/$/, ''), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
-      },
-      body: JSON.stringify({ url, method, headers, ...(method === 'POST' ? { body: rawBody } : {}) }),
+    const base = proxyUrl.replace(/\/$/, '');
+    const envelope = JSON.stringify({
+      url,
+      method,
+      headers,
+      ...(method === 'POST' ? { body: rawBody } : {}),
     });
+    const relayHeaders = {
+      'Content-Type': 'application/json',
+      ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
+    };
+    // Algunos relays exponen la ruta /verify además de la raíz: probamos la raíz
+    // y, si el relay mismo falla (404 / ruta no configurada), reintentamos en /verify.
+    let relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
+    if (relayRes.status === 404 || relayRes.status === 405) {
+      relayRes = await fetch(`${base}/verify`, {
+        method: 'POST',
+        headers: relayHeaders,
+        body: envelope,
+      });
+    }
     const relayText = await relayRes.text();
     let relayJson: { status?: number; body?: string } = {};
     try {
