@@ -162,6 +162,10 @@ function ProductPage() {
       setError("Ingresa tu ID de jugador para continuar.");
       return;
     }
+    if (base.needsId && checkOk === false) {
+      setError("ID de jugador incorrecto. Verifícalo antes de comprar.");
+      return;
+    }
     if (!phoneValid) {
       setPhoneTouched(true);
       setError("Ingresa tu número de teléfono (obligatorio).");
