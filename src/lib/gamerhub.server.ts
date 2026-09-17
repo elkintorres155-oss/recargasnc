@@ -116,3 +116,41 @@ export const gamerHubBalance = () => request('GET', '/balance');
 
 /** Catálogo de productos (lectura). */
 export const gamerHubProducts = () => request('GET', '/products');
+
+/**
+ * Verificación de ID de jugador.
+ * POST /v1/verify con body EXACTO:
+ *   { product_code: "freefire-latam", payload: { input1: "<PLAYER_ID>" } }
+ * `payload` es un objeto (no un array) y Free Fire LATAM solo usa input1.
+ */
+export const gamerHubVerify = (productCode: string, playerId: string) =>
+  request('POST', '/verify', {
+    body: { product_code: productCode, payload: { input1: playerId } },
+  });
+
+/**
+ * product_code de GamerHub para verificar el ID, según el producto/SKU de la tienda.
+ * Free Fire LATAM => "freefire-latam" (solo requiere Player ID, sin zone_id).
+ */
+export function gamerHubProductCodeFor(productId?: string, serviceCode?: string): string | null {
+  const hay = `${productId ?? ''} ${serviceCode ?? ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (hay.includes('freefire')) return 'freefire-latam';
+  return null;
+}
+
+/** Resultado normalizado de la verificación. */
+export async function gamerHubCheckId(
+  productCode: string,
+  playerId: string,
+): Promise<{ ok: boolean; valid: boolean; nickname: string | null; region: string | null }> {
+  const res = await gamerHubVerify(productCode, playerId);
+  const body = res.body as { valid?: boolean; name?: string; region?: string; data?: { valid?: boolean; name?: string; region?: string } } | null;
+  const info = body?.data ?? body ?? {};
+  if (!res.ok) return { ok: false, valid: false, nickname: null, region: null };
+  return {
+    ok: true,
+    valid: info.valid === true,
+    nickname: typeof info.name === 'string' && info.name ? info.name : null,
+    region: typeof info.region === 'string' ? info.region : null,
+  };
+}
