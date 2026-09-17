@@ -100,7 +100,13 @@ function ProductPage() {
     setChecking(true);
     const t = setTimeout(async () => {
       try {
-        const res = await verifyId({ data: { serviceCode: activeSku, userId: trimmedId } });
+        const res = await verifyId({
+          data: {
+            serviceCode: activeSku,
+            userId: trimmedId,
+            productId: base?.providerProductId || base?.id || "",
+          },
+        });
         if (cancelled) return;
         setCheckOk(res.valid);
         setNickname(res.valid && res.nickname ? res.nickname : "");
