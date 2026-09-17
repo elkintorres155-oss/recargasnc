@@ -299,7 +299,11 @@ function ProductPage() {
                     setChecking(true);
                     try {
                       const res = await verifyId({
-                        data: { serviceCode: activeSku, userId: trimmedId },
+                        data: {
+                          serviceCode: activeSku,
+                          userId: trimmedId,
+                          productId: base?.providerProductId || base?.id || "",
+                        },
                       });
                       setCheckOk(res.valid);
                       setNickname(res.valid && res.nickname ? res.nickname : "");
