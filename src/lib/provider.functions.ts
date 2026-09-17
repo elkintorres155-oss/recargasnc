@@ -51,7 +51,32 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
     return { serviceCode, userId, serverId, validationCode, productId };
   })
   .handler(async ({ data }) => {
-    // 1) FZR (fazercards)
+    // 1) GamerHub: POST /v1/verify con { product_code, payload: { input1 } }
+    const gh = await import('./gamerhub.server');
+    if (gh.getGamerHubCredentials()) {
+      const productCode = gh.gamerHubProductCodeFor(data.productId, data.serviceCode);
+      if (productCode) {
+        try {
+          const res = await gh.gamerHubCheckId(productCode, data.userId);
+          if (res.ok) {
+            return {
+              ok: true,
+              valid: res.valid,
+              nickname: res.valid ? res.nickname : null,
+              message: res.valid
+                ? res.nickname
+                  ? `Cuenta encontrada: ${res.nickname}`
+                  : 'ID válido.'
+                : 'ID de jugador incorrecto. Revísalo e intenta de nuevo.',
+            };
+          }
+        } catch {
+          /* si GamerHub falla, seguimos con los otros proveedores */
+        }
+      }
+    }
+
+    // 2) FZR (fazercards)
     const fzr = await import('./fzr.server');
     if (fzr.getFzrCredentials()) {
       const category = fzr.fzrValidationCategoryFor(data.productId, data.serviceCode);

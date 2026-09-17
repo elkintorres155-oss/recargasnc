@@ -100,7 +100,13 @@ function ProductPage() {
     setChecking(true);
     const t = setTimeout(async () => {
       try {
-        const res = await verifyId({ data: { serviceCode: activeSku, userId: trimmedId } });
+        const res = await verifyId({
+          data: {
+            serviceCode: activeSku,
+            userId: trimmedId,
+            productId: base?.providerProductId || base?.id || "",
+          },
+        });
         if (cancelled) return;
         setCheckOk(res.valid);
         setNickname(res.valid && res.nickname ? res.nickname : "");
@@ -154,6 +160,10 @@ function ProductPage() {
     }
     if (base.needsId && !playerId.trim()) {
       setError("Ingresa tu ID de jugador para continuar.");
+      return;
+    }
+    if (base.needsId && checkOk === false) {
+      setError("ID de jugador incorrecto. Verifícalo antes de comprar.");
       return;
     }
     if (!phoneValid) {
@@ -293,7 +303,11 @@ function ProductPage() {
                     setChecking(true);
                     try {
                       const res = await verifyId({
-                        data: { serviceCode: activeSku, userId: trimmedId },
+                        data: {
+                          serviceCode: activeSku,
+                          userId: trimmedId,
+                          productId: base?.providerProductId || base?.id || "",
+                        },
                       });
                       setCheckOk(res.valid);
                       setNickname(res.valid && res.nickname ? res.nickname : "");
