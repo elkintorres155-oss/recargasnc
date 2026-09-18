@@ -66,26 +66,36 @@ async function request(
   const proxySecret = process.env['TOPUP_PROXY_SECRET'];
   if (proxyUrl) {
     const base = proxyUrl.replace(/\/$/, '');
+    const relayHeaders = {
+      'Content-Type': 'application/json',
+      ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
+    };
+    // Verificación de ID: el relay expone POST /verify y espera el JSON de
+    // GamerHub TAL CUAL ({ product_code, payload: { input1 } }); él firma y
+    // reenvía. No se envía sobre ni firma: el body va exacto.
+    if (path === '/verify' && method === 'POST') {
+      const res = await fetch(`${base}/verify`, {
+        method: 'POST',
+        headers: relayHeaders,
+        body: rawBody,
+      });
+      const text = await res.text();
+      let parsed: unknown = text;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        /* respuesta no JSON */
+      }
+      return { ok: res.ok, status: res.status, body: parsed };
+    }
+    // Resto de llamadas: sobre genérico { url, method, headers, body } en la raíz.
     const envelope = JSON.stringify({
       url,
       method,
       headers,
       ...(method === 'POST' ? { body: rawBody } : {}),
     });
-    const relayHeaders = {
-      'Content-Type': 'application/json',
-      ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
-    };
-    // Algunos relays exponen la ruta /verify además de la raíz: probamos la raíz
-    // y, si el relay mismo falla (404 / ruta no configurada), reintentamos en /verify.
-    let relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
-    if (relayRes.status === 404 || relayRes.status === 405) {
-      relayRes = await fetch(`${base}/verify`, {
-        method: 'POST',
-        headers: relayHeaders,
-        body: envelope,
-      });
-    }
+    const relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
     const relayText = await relayRes.text();
     let relayJson: { status?: number; body?: string } = {};
     try {
