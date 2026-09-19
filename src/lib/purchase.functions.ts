@@ -197,6 +197,7 @@ export const purchaseWithBalance = createServerFn({ method: 'POST' })
       playerId: data.playerId,
       provider: providerCfg.provider,
       fzrCategory: providerCfg.fzrCategory,
+      gamerhubProduct: providerCfg.gamerhubProduct,
     });
 
     if (dispatch.dispatched) {

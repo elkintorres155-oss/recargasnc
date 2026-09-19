@@ -12,7 +12,8 @@ export type Pack = {
   pricePro?: number; // precio para Revendedor PRO
   priceWholesale?: number; // precio para Mayorista
   sku?: string; // código/SKU del proveedor (FlashTopUp service_code o FZR offer_id)
-  provider?: "flashtopup" | "fzr" | "wdg"; // proveedor que hace la recarga
+  provider?: "flashtopup" | "fzr" | "wdg" | "gamerhub"; // proveedor que hace la recarga
+  gamerhubProduct?: string; // product_code de GamerHub (ej. freefire-latam)
   fzrCategory?: string; // category_id de FZR (ej. free_fire_latam)
   requiresStock?: boolean; // se entrega con una cuenta del inventario
   serviceSlug?: string; // servicio del inventario (netflix, spotify, disney...)
