@@ -650,8 +650,6 @@ function AdminPage() {
                                 ? "offer_id (FZR)"
                                 : k.provider === "wdg"
                                   ? "product_id numérico (WDG)"
-                                  : k.provider === "gamerhub"
-                                    ? "SKU GamerHub"
                                   : "SKU proveedor"
                             }
                             className={inputCls}
@@ -660,11 +658,7 @@ function AdminPage() {
                             value={k.provider ?? "flashtopup"}
                             onChange={(e) =>
                               patchPack(cat, pi, ki, {
-                                provider: e.target.value as
-                                  | "flashtopup"
-                                  | "fzr"
-                                  | "wdg"
-                                  | "gamerhub",
+                                provider: e.target.value as "flashtopup" | "fzr" | "wdg",
                               })
                             }
                             className={inputCls}
@@ -672,18 +666,7 @@ function AdminPage() {
                             <option value="flashtopup">Proveedor 1 · FlashTopUp</option>
                             <option value="fzr">Proveedor 2 · FZR</option>
                             <option value="wdg">Proveedor 3 · WDG</option>
-                            <option value="gamerhub">Proveedor 4 · GamerHub</option>
                           </select>
-                          {k.provider === "gamerhub" ? (
-                            <input
-                              value={k.gamerhubProduct ?? ""}
-                              onChange={(e) =>
-                                patchPack(cat, pi, ki, { gamerhubProduct: e.target.value })
-                              }
-                              placeholder="product_code GamerHub (ej. freefire-latam)"
-                              className={inputCls}
-                            />
-                          ) : null}
                           {k.provider === "fzr" ? (
                             <input
                               value={k.fzrCategory ?? ""}

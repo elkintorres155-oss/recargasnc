@@ -1,6 +1,6 @@
 // Server-only: qué proveedor entrega cada paquete (según el catálogo guardado).
 
-export type PackProvider = 'flashtopup' | 'fzr' | 'wdg' | 'gamerhub';
+export type PackProvider = 'flashtopup' | 'fzr' | 'wdg';
 
 export type PackProviderConfig = {
   provider: PackProvider;
@@ -8,8 +8,6 @@ export type PackProviderConfig = {
   sku: string;
   /** category_id de FZR (ej. free_fire_latam). */
   fzrCategory: string;
-  /** product_code de GamerHub (ej. freefire-latam). */
-  gamerhubProduct: string;
 };
 
 export async function getPackProviderConfig(
@@ -30,21 +28,14 @@ export async function getPackProviderConfig(
       for (const pack of product?.packs ?? []) {
         if (pack?.id !== packId) continue;
         const provider: PackProvider =
-          pack?.provider === 'fzr'
-            ? 'fzr'
-            : pack?.provider === 'wdg'
-              ? 'wdg'
-              : pack?.provider === 'gamerhub'
-                ? 'gamerhub'
-                : 'flashtopup';
+          pack?.provider === 'fzr' ? 'fzr' : pack?.provider === 'wdg' ? 'wdg' : 'flashtopup';
         return {
           provider,
           sku: String(pack?.sku ?? ''),
           fzrCategory: String(pack?.fzrCategory ?? product?.fzrCategory ?? ''),
-          gamerhubProduct: String(pack?.gamerhubProduct ?? product?.gamerhubProduct ?? ''),
         };
       }
     }
   }
-  return { provider: 'flashtopup', sku: '', fzrCategory: '', gamerhubProduct: '' };
+  return { provider: 'flashtopup', sku: '', fzrCategory: '' };
 }

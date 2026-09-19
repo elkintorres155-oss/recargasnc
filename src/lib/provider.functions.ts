@@ -63,10 +63,9 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
               ok: true,
               valid: res.valid,
               nickname: res.valid ? res.nickname : null,
-              region: res.valid ? res.region : null,
               message: res.valid
                 ? res.nickname
-                  ? `Cuenta encontrada: ${res.nickname}${res.region ? ` (${res.region})` : ''}`
+                  ? `Cuenta encontrada: ${res.nickname}`
                   : 'ID válido.'
                 : 'ID de jugador incorrecto. Revísalo e intenta de nuevo.',
             };

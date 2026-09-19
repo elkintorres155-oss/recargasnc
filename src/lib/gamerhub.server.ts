@@ -66,36 +66,26 @@ async function request(
   const proxySecret = process.env['TOPUP_PROXY_SECRET'];
   if (proxyUrl) {
     const base = proxyUrl.replace(/\/$/, '');
-    const relayHeaders = {
-      'Content-Type': 'application/json',
-      ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
-    };
-    // Verificación de ID: el relay expone POST /verify y espera el JSON de
-    // GamerHub TAL CUAL ({ product_code, payload: { input1 } }); él firma y
-    // reenvía. No se envía sobre ni firma: el body va exacto.
-    if (path === '/verify' && method === 'POST') {
-      const res = await fetch(`${base}/verify`, {
-        method: 'POST',
-        headers: relayHeaders,
-        body: rawBody,
-      });
-      const text = await res.text();
-      let parsed: unknown = text;
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        /* respuesta no JSON */
-      }
-      return { ok: res.ok, status: res.status, body: parsed };
-    }
-    // Resto de llamadas: sobre genérico { url, method, headers, body } en la raíz.
     const envelope = JSON.stringify({
       url,
       method,
       headers,
       ...(method === 'POST' ? { body: rawBody } : {}),
     });
-    const relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
+    const relayHeaders = {
+      'Content-Type': 'application/json',
+      ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
+    };
+    // Algunos relays exponen la ruta /verify además de la raíz: probamos la raíz
+    // y, si el relay mismo falla (404 / ruta no configurada), reintentamos en /verify.
+    let relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
+    if (relayRes.status === 404 || relayRes.status === 405) {
+      relayRes = await fetch(`${base}/verify`, {
+        method: 'POST',
+        headers: relayHeaders,
+        body: envelope,
+      });
+    }
     const relayText = await relayRes.text();
     let relayJson: { status?: number; body?: string } = {};
     try {
@@ -161,93 +151,19 @@ export function gamerHubProductCodeFor(productId?: string, serviceCode?: string)
   return null;
 }
 
-type AnyRec = Record<string, unknown>;
-
-function pickString(obj: AnyRec, keys: string[]): string | null {
-  for (const k of keys) {
-    const v = obj[k];
-    if (typeof v === 'string' && v.trim()) return v.trim();
-  }
-  return null;
-}
-
-/**
- * Resultado normalizado de la verificación.
- * GamerHub puede devolver el resultado en la raíz o dentro de `data`/`result`,
- * y marcar la validez con `valid`, `verified`, `is_valid` o `status: "VERIFIED"`.
- * La región (US, LATAM, BR…) es solo informativa: NUNCA invalida el ID.
- */
+/** Resultado normalizado de la verificación. */
 export async function gamerHubCheckId(
   productCode: string,
   playerId: string,
 ): Promise<{ ok: boolean; valid: boolean; nickname: string | null; region: string | null }> {
   const res = await gamerHubVerify(productCode, playerId);
+  const body = res.body as { valid?: boolean; name?: string; region?: string; data?: { valid?: boolean; name?: string; region?: string } } | null;
+  const info = body?.data ?? body ?? {};
   if (!res.ok) return { ok: false, valid: false, nickname: null, region: null };
-
-  const root = (res.body ?? {}) as AnyRec;
-  const nested = [root['data'], root['result'], root['payload'], root['player']]
-    .filter((v): v is AnyRec => !!v && typeof v === 'object' && !Array.isArray(v));
-  const info: AnyRec = Object.assign({}, ...nested, root);
-  for (const n of nested) for (const [k, v] of Object.entries(n)) if (info[k] == null) info[k] = v;
-
-  const statusText = String(
-    pickString(info, ['status', 'state', 'message', 'result_status']) ?? '',
-  ).toLowerCase();
-  const flags = ['valid', 'verified', 'is_valid', 'isValid', 'success', 'ok'];
-  let valid = false;
-  for (const f of flags) {
-    const v = info[f];
-    if (v === true || v === 'true' || v === 1 || v === '1') valid = true;
-    if (v === false || v === 'false') {
-      // un false explícito en `valid`/`verified` manda
-      if (f === 'valid' || f === 'verified' || f === 'is_valid' || f === 'isValid') {
-        return {
-          ok: true,
-          valid: false,
-          nickname: null,
-          region: pickString(info, ['region', 'zone', 'server']),
-        };
-      }
-    }
-  }
-  if (!valid && /verified|valid|ok|success/.test(statusText) && !/invalid|not/.test(statusText)) {
-    valid = true;
-  }
-
-  const nickname = pickString(info, [
-    'name',
-    'nickname',
-    'username',
-    'player_name',
-    'playerName',
-    'nick',
-    'account_name',
-    'accountName',
-    'user_name',
-  ]);
-  const region = pickString(info, ['region', 'zone', 'server', 'country']);
-
-  // Si GamerHub devolvió el nombre del jugador, el ID existe.
-  if (!valid && nickname) valid = true;
-
-  return { ok: true, valid, nickname, region };
+  return {
+    ok: true,
+    valid: info.valid === true,
+    nickname: typeof info.name === 'string' && info.name ? info.name : null,
+    region: typeof info.region === 'string' ? info.region : null,
+  };
 }
-
-/**
- * Orden de recarga en GamerHub (documentado): POST /v1/orders
- * con { product, sku, player_id }.
- */
-export const gamerHubOrder = (input: {
-  product: string;
-  sku: string;
-  playerId: string;
-  reference?: string;
-}) =>
-  request('POST', '/orders', {
-    body: {
-      product: input.product,
-      sku: input.sku,
-      player_id: input.playerId,
-      ...(input.reference ? { reference: input.reference } : {}),
-    },
-  });

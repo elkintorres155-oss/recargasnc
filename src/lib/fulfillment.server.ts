@@ -121,11 +121,9 @@ export async function dispatchToProvider(input: {
   playerId: string;
   serverId?: string;
   /** Proveedor elegido para este paquete. */
-  provider?: 'flashtopup' | 'fzr' | 'wdg' | 'gamerhub';
+  provider?: 'flashtopup' | 'fzr' | 'wdg';
   /** category_id de FZR (solo proveedor secundario). */
   fzrCategory?: string;
-  /** product_code de GamerHub (ej. freefire-latam). */
-  gamerhubProduct?: string;
 }): Promise<{
   dispatched: boolean;
   providerOrderId: string | null;
@@ -134,7 +132,6 @@ export async function dispatchToProvider(input: {
 }> {
   if (input.provider === 'fzr') return dispatchToFzr(input);
   if (input.provider === 'wdg') return dispatchToWdg(input);
-  if (input.provider === 'gamerhub') return dispatchToGamerHub(input);
   const { getCredentials, signedRequest } = await import('./flashtopup.server');
   const creds = getCredentials();
   const orderPath = process.env['TOPUP_PROVIDER_ORDER_PATH'];
@@ -433,99 +430,6 @@ async function dispatchToFzr(input: {
     return { dispatched: true, providerOrderId, message: 'Recarga enviada al proveedor.' };
   } catch (e) {
     console.error('[fzr]', e);
-    return {
-      dispatched: false,
-      providerOrderId: null,
-      message: 'No se pudo contactar al proveedor; se procesará manualmente.',
-    };
-  }
-}
-
-/**
- * Despacho a GamerHub: POST /v1/orders con { product, sku, player_id }.
- * `product` es el product_code (ej. freefire-latam) y `sku` el paquete.
- */
-async function dispatchToGamerHub(input: {
-  orderId: string;
-  packId: string;
-  playerId: string;
-  gamerhubProduct?: string;
-}): Promise<{
-  dispatched: boolean;
-  providerOrderId: string | null;
-  message: string;
-  redeemCode?: string | null;
-}> {
-  const gh = await import('./gamerhub.server');
-  if (!gh.getGamerHubCredentials()) {
-    return {
-      dispatched: false,
-      providerOrderId: null,
-      message: 'Proveedor GamerHub no configurado. Se procesará manualmente.',
-    };
-  }
-
-  const product = String(input.gamerhubProduct ?? '').trim();
-  const sku = String(input.packId ?? '').trim();
-  if (!product || !sku) {
-    return {
-      dispatched: false,
-      providerOrderId: null,
-      message:
-        'Este paquete no tiene el producto/SKU de GamerHub configurado. Se procesará manualmente.',
-    };
-  }
-
-  try {
-    const res = await gh.gamerHubOrder({
-      product,
-      sku,
-      playerId: String(input.playerId ?? '').trim(),
-      reference: input.orderId,
-    });
-    const body = (res.body ?? {}) as {
-      success?: boolean;
-      status?: string;
-      message?: string;
-      error?: string | { message?: string };
-      data?: {
-        order_id?: string | number;
-        id?: string | number;
-        status?: string;
-        code?: string;
-        redeem_code?: string;
-      };
-      order_id?: string | number;
-    };
-    const idRaw = body?.data?.order_id ?? body?.data?.id ?? body?.order_id ?? null;
-    const providerOrderId = idRaw != null ? String(idRaw) : null;
-    const status = String(body?.data?.status ?? body?.status ?? '').toLowerCase();
-    const failed =
-      body?.success === false ||
-      ['failed', 'rejected', 'cancelled', 'canceled', 'error'].includes(status);
-
-    if (!res.ok || failed) {
-      console.warn('[gamerhub] provider rejected order', { status: res.status, body: res.body });
-      const detail =
-        typeof body?.error === 'string'
-          ? body.error
-          : (body?.error?.message ?? body?.message ?? '');
-      return {
-        dispatched: false,
-        providerOrderId: null,
-        message: `El proveedor rechazó la recarga (${res.status})${detail ? `: ${detail}` : ''}`,
-      };
-    }
-
-    const redeemCode = (body?.data?.redeem_code ?? body?.data?.code ?? '') || null;
-    return {
-      dispatched: true,
-      providerOrderId,
-      redeemCode,
-      message: 'Recarga enviada al proveedor.',
-    };
-  } catch (e) {
-    console.error('[gamerhub]', e);
     return {
       dispatched: false,
       providerOrderId: null,
