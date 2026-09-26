@@ -155,12 +155,29 @@ export const gamerHubVerify = (productCode: string, playerId: string) =>
  * product_code de GamerHub para verificar el ID, según el producto/SKU de la tienda.
  * Free Fire LATAM => "freefire-latam" (solo requiere Player ID, sin zone_id).
  */
+
 export function gamerHubProductCodeFor(productId?: string, serviceCode?: string): string | null {
-  const hay = `${productId ?? ''} ${serviceCode ?? ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (hay.includes('freefire')) return 'freefire-latam';
+  const hay = `${productId ?? ''} ${serviceCode ?? ''}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  // Free Fire LATAM
+  if (hay.includes('freefire')) {
+    return 'freefire-latam';
+  }
+
+  // Blood Strike Global
+  if (hay.includes('bloodstrike') || hay.includes('bs-global')) {
+    return 'bs-global';
+  }
+
+  // PUBG Mobile Global
+  if (hay.includes('pubgmobile') || hay.includes('pubgm-global')) {
+    return 'pubgm-global';
+  }
+
   return null;
 }
-
 type AnyRec = Record<string, unknown>;
 
 function pickString(obj: AnyRec, keys: string[]): string | null {
