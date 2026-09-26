@@ -8,15 +8,15 @@ import gift1 from "@/assets/gift-1.jpg";
 export type Pack = {
   id: string;
   label: string;
-  price: number; // córdobas (NIO) — precio público
-  pricePro?: number; // precio para Revendedor PRO
-  priceWholesale?: number; // precio para Mayorista
-  sku?: string; // código/SKU del proveedor (FlashTopUp service_code o FZR offer_id)
-  provider?: "flashtopup" | "fzr" | "wdg" | "gamerhub"; // proveedor que hace la recarga
-  gamerhubProduct?: string; // product_code de GamerHub (ej. freefire-latam)
-  fzrCategory?: string; // category_id de FZR (ej. free_fire_latam)
-  requiresStock?: boolean; // se entrega con una cuenta del inventario
-  serviceSlug?: string; // servicio del inventario (netflix, spotify, disney...)
+  price: number;
+  pricePro?: number;
+  priceWholesale?: number;
+  sku?: string;
+  provider?: "flashtopup" | "fzr" | "wdg" | "gamerhub";
+  gamerhubProduct?: string;
+  fzrCategory?: string;
+  requiresStock?: boolean;
+  serviceSlug?: string;
 };
 
 export type Product = {
@@ -26,7 +26,7 @@ export type Product = {
   image: string;
   hot?: boolean;
   needsId?: boolean;
-  providerProductId?: string; // ID del producto en el proveedor (ej. freefire)
+  providerProductId?: string;
   packs: Pack[];
 };
 
@@ -46,8 +46,16 @@ const slug = (s: string) =>
     .replace(/(^-|-$)/g, "");
 
 function packs(list: [string, number][]): Pack[] {
-  return list.map(([label, price]) => ({ id: slug(label), label, price }));
+  return list.map(([label, price]) => ({
+    id: slug(label),
+    label,
+    price,
+  }));
 }
+
+// =========================
+// FREE FIRE
+// =========================
 
 const diamantes = packs([
   ["100 Diamantes", 65],
@@ -58,8 +66,72 @@ const diamantes = packs([
   ["5600 Diamantes", 2950],
 ]);
 
-// Robux con despacho automático vía WDG (sku = product_id de WDG).
-const wdgPack = (label: string, price: number, productId: number): Pack => ({
+// =========================
+// BLOOD STRIKE - GAMERHUB
+// =========================
+
+const bloodStrike: Pack[] = [
+  {
+    id: "51-gold",
+    label: "51 Gold",
+    price: 120,
+    sku: "bs-global-51gold",
+    provider: "gamerhub",
+    gamerhubProduct: "bs-global",
+  },
+  {
+    id: "100-gold",
+    label: "100 Gold",
+    price: 320,
+    sku: "bs-global-100g",
+    provider: "gamerhub",
+    gamerhubProduct: "bs-global",
+  },
+  {
+    id: "300-gold",
+    label: "300 Gold",
+    price: 640,
+    sku: "bs-global-300g",
+    provider: "gamerhub",
+    gamerhubProduct: "bs-global",
+  },
+  {
+    id: "500-gold",
+    label: "500 Gold",
+    price: 1250,
+    sku: "bs-global-500g",
+    provider: "gamerhub",
+    gamerhubProduct: "bs-global",
+  },
+];
+
+// =========================
+// PUBG MOBILE
+// =========================
+
+// Se mantiene temporalmente la estructura actual.
+// El producto ya queda identificado como pubgm-global
+// para que Check ID pueda reconocerlo.
+const pubgMobile = packs([
+  ["Paquete pequeño", 120],
+  ["Paquete mediano", 320],
+  ["Paquete grande", 640],
+  ["Paquete premium", 1250],
+]).map((pack) => ({
+  ...pack,
+  provider: "gamerhub" as const,
+  gamerhubProduct: "pubgm-global",
+}));
+
+// =========================
+// ROBUX / WDG
+// =========================
+
+const wdgPack = (
+  label: string,
+  price: number,
+  productId: number,
+): Pack => ({
   id: slug(label),
   label,
   price,
@@ -80,6 +152,10 @@ const robux: Pack[] = [
   wdgPack("4500 Robux", 2450, 237030),
   wdgPack("10000 Robux", 4900, 237031),
 ];
+
+// =========================
+// OTROS
+// =========================
 
 const genericos = packs([
   ["Paquete pequeño", 120],
@@ -107,9 +183,20 @@ function make(
   tag: string,
   image: string,
   list: Pack[],
-  extra?: { hot?: boolean; needsId?: boolean },
+  extra?: {
+    hot?: boolean;
+    needsId?: boolean;
+    providerProductId?: string;
+  },
 ): Product {
-  return { id: slug(name), name, tag, image, packs: list, ...extra };
+  return {
+    id: slug(name),
+    name,
+    tag,
+    image,
+    packs: list,
+    ...extra,
+  };
 }
 
 export const categories: Category[] = [
@@ -118,35 +205,94 @@ export const categories: Category[] = [
     icon: "🔥",
     label: "Populares",
     items: [
-      make("Free Fire", "Recarga", game1, diamantes, { hot: true, needsId: true }),
+      // FREE FIRE: SE MANTIENE COMO ESTABA
+      make("Free Fire", "Recarga", game1, diamantes, {
+        hot: true,
+        needsId: true,
+        providerProductId: "freefire-latam",
+      }),
+
       make("Free Fire — Pases de Nivel", "Recarga", game2, genericos, {
         hot: true,
         needsId: true,
       }),
-      make("Blood Strike", "Recarga", game4, genericos, { hot: true, needsId: true }),
-      make("Roblox", "Recarga", game3, robux, { hot: true, needsId: true }),
-      make("Mobile Legends", "Recarga", game4, diamantes, { hot: true, needsId: true }),
+
+      // BLOOD STRIKE → GAMERHUB
+      make("Blood Strike", "Recarga", game4, bloodStrike, {
+        hot: true,
+        needsId: true,
+        providerProductId: "bs-global",
+      }),
+
+      make("Roblox", "Recarga", game3, robux, {
+        hot: true,
+        needsId: true,
+      }),
+
+      make("Mobile Legends", "Recarga", game4, diamantes, {
+        hot: true,
+        needsId: true,
+      }),
     ],
   },
+
   {
     id: "juegos",
     icon: "🎮",
     label: "Juegos",
     items: [
-      make("Farlight 84", "Recarga", game2, genericos, { needsId: true }),
-      make("PUBG Mobile", "Recarga", game1, genericos, { needsId: true }),
-      make("Honor of Kings", "Recarga", game4, genericos, { needsId: true }),
-      make("Arena Breakout", "Recarga", game2, genericos, { needsId: true }),
-      make("Marvel Rivals", "Recarga", game4, genericos, { needsId: true }),
-      make("Identity V", "Recarga", game3, genericos, { needsId: true }),
-      make("Delta Force", "Recarga", game2, genericos, { needsId: true }),
-      make("Genshin Impact", "Recarga", game4, genericos, { needsId: true }),
-      make("Call of Duty Mobile", "Recarga", game1, genericos, { needsId: true }),
-      make("Clash of Clans", "Recarga", game3, genericos, { needsId: true }),
-      make("Valorant", "Recarga", game2, genericos, { needsId: true }),
-      make("League of Legends", "Recarga", game4, genericos, { needsId: true }),
+      make("Farlight 84", "Recarga", game2, genericos, {
+        needsId: true,
+      }),
+
+      // PUBG MOBILE → GAMERHUB
+      make("PUBG Mobile", "Recarga", game1, pubgMobile, {
+        needsId: true,
+        providerProductId: "pubgm-global",
+      }),
+
+      make("Honor of Kings", "Recarga", game4, genericos, {
+        needsId: true,
+      }),
+
+      make("Arena Breakout", "Recarga", game2, genericos, {
+        needsId: true,
+      }),
+
+      make("Marvel Rivals", "Recarga", game4, genericos, {
+        needsId: true,
+      }),
+
+      make("Identity V", "Recarga", game3, genericos, {
+        needsId: true,
+      }),
+
+      make("Delta Force", "Recarga", game2, genericos, {
+        needsId: true,
+      }),
+
+      make("Genshin Impact", "Recarga", game4, genericos, {
+        needsId: true,
+      }),
+
+      make("Call of Duty Mobile", "Recarga", game1, genericos, {
+        needsId: true,
+      }),
+
+      make("Clash of Clans", "Recarga", game3, genericos, {
+        needsId: true,
+      }),
+
+      make("Valorant", "Recarga", game2, genericos, {
+        needsId: true,
+      }),
+
+      make("League of Legends", "Recarga", game4, genericos, {
+        needsId: true,
+      }),
     ],
   },
+
   {
     id: "streaming",
     icon: "📺",
@@ -160,6 +306,7 @@ export const categories: Category[] = [
       make("Crunchyroll", "Suscripción", stream1, suscripcion),
     ],
   },
+
   {
     id: "giftcards",
     icon: "🎁",
@@ -175,7 +322,9 @@ export const categories: Category[] = [
   },
 ];
 
-export const allProducts: Product[] = categories.flatMap((c) => c.items);
+export const allProducts: Product[] = categories.flatMap(
+  (c) => c.items,
+);
 
 export function findProduct(id: string): Product | undefined {
   return allProducts.find((p) => p.id === id);
