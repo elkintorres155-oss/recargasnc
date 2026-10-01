@@ -231,7 +231,9 @@ export async function findMatchingTransfer(input: MatchInput): Promise<MatchResu
   if (!best.checks.date) notes.push('La fecha del correo está fuera del rango razonable.');
   // Coincidencia clara: monto + banco + fecha, y la referencia coincide o el banco no la muestra
   // (null o falso solo si no hay referencias en el correo).
-  const refOk = best.checks.reference === true || (best.email.references.length === 0 && best.checks.reference !== false);
-  const matched = best.checks.amount && best.checks.bank && best.checks.date && (refOk || best.checks.reference === null && best.email.references.length === 0);
+  // Coincidencia clara: monto + banco + fecha, y la referencia aparece en el correo
+  // (o el banco no incluye referencias en su notificación).
+  const refOk = best.checks.reference === true || best.email.references.length === 0;
+  const matched = best.checks.amount && best.checks.bank && best.checks.date && refOk;
   return { status: matched ? 'matched' : 'partial', email: best.email, checks: best.checks, notes };
 }
