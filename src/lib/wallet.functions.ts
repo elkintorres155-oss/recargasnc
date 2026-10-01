@@ -240,74 +240,110 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       detectedAmount != null && Math.abs(detectedAmount - data.amountNio) >= 0.01;
 
     const codeMatch = codeValid && !!ai.noteCode && ai.noteCode === noteCode;
-    // Acreditación automática: la IA confía ≥90%, aprueba el comprobante
-    // y el código de nota vigente coincide con el que aparece en la imagen.
-    const autoApprove = ai.verdict === 'approved' && ai.confidence >= 0.9 && codeMatch;
+    const bankReference = (data.reference.trim() || ai.reference).trim();
 
-    const { data: row, error } = await supabaseAdmin
+    // Referencia bancaria ya usada en otro pago → nunca aprobar, revisión.
+    let refReused = false;
+    if (bankReference) {
+      const { data: refDup } = await supabaseAdmin
+        .from('topup_requests')
+        .select('id')
+        .ilike('bank_reference', bankReference)
+        .neq('payment_status', 'payment_rejected')
+        .limit(1);
+      refReused = !!refDup && refDup.length > 0;
+    }
+
+    // Verificación con la notificación bancaria real en Gmail.
+    const { gmailConfigured, findMatchingTransfer } = await import('@/lib/gmail-payments.server');
+    let gmail: Awaited<ReturnType<typeof findMatchingTransfer>> | null = null;
+    if (gmailConfigured() && ai.verdict !== 'rejected') {
+      const { data: usedMsgs } = await supabaseAdmin
+        .from('topup_requests')
+        .select('gmail_message_id')
+        .not('gmail_message_id', 'is', null)
+        .neq('payment_status', 'payment_rejected');
+      gmail = await findMatchingTransfer({
+        method: data.method,
+        amount: detectedAmount ?? data.amountNio,
+        bankReference,
+        receiptDate: ai.date || null,
+        requestedAt: new Date(),
+        excludeMessageIds: (usedMsgs ?? []).map((r) => r.gmail_message_id as string),
+      });
+    }
+
+    // Aprobación automática SOLO con evidencia de Gmail + comprobante + reglas.
+    // La IA por sí sola nunca aprueba.
+    const autoApprove =
+      gmail?.status === 'matched' &&
+      ai.verdict !== 'rejected' &&
+      !refReused &&
+      !amountMismatch;
+    const paymentStatus = ai.verdict === 'rejected' ? 'payment_rejected' : 'payment_review';
+    const internalReference = `RNC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const validation = {
+      ai: { verdict: ai.verdict, confidence: ai.confidence, noteCodeMatch: codeMatch },
+      gmail: gmail ? { status: gmail.status, checks: gmail.checks, notes: gmail.notes } : { status: 'not_configured' },
+      refReused,
+      amountMismatch,
+    };
+
+    await supabaseAdmin
       .from('topup_requests')
-      .insert({
-        user_id: userId,
-        method_code: data.method,
-        method_name: data.methodName || data.method.toUpperCase(),
-        amount_nio: effectiveAmount,
-        reference: data.reference.trim(),
-        receipt_path: receiptPath,
-        status: 'pending' as const,
-        note_code: noteCode,
-        ai_note_code: ai.noteCode,
-        ai_reference: ai.reference,
-        ai_amount_nio: ai.amount,
-        ai_bank: ai.bank,
-        ai_date: ai.date,
-        ai_confidence: ai.confidence,
-        ai_verdict: ai.verdict,
+      .update({
+        internal_reference: internalReference,
+        bank_reference: bankReference || null,
+        payment_status: paymentStatus,
+        gmail_message_id: gmail?.email?.messageId ?? null,
+        gmail_from: gmail?.email?.from ?? null,
+        gmail_subject: gmail?.email?.subject ?? null,
+        gmail_amount_nio: gmail?.email ? (detectedAmount ?? data.amountNio) : null,
+        gmail_date: gmail?.email?.date ?? null,
+        validation_result: validation as never,
         ai_notes: [
-          amountMismatch
-            ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}.`
-            : '',
-          !codeValid && noteCode ? 'El código de nota venció o ya fue usado.' : '',
-          codeValid && ai.noteCode && !codeMatch
-            ? `El código leído (${ai.noteCode}) no coincide con el generado (${noteCode}).`
-            : '',
-          ai.notes,
+          refReused ? '⚠️ Posible reutilización: esta referencia bancaria ya está en otro pago.' : '',
+          gmail ? gmail.notes.join(' ') : 'Gmail no configurado: requiere revisión manual.',
         ]
           .filter(Boolean)
-          .join(' ')
-          .trim(),
+          .join(' '),
       })
-      .select('id, status, amount_nio')
-      .single();
-    if (error) throw new Error(error.message);
+      .eq('id', row.id);
+
+    await supabaseAdmin.from('payment_audit').insert([
+      { topup_id: row.id, step: 'Comprobante recibido', detail: { internalReference, bankReference, ai: validation.ai } as never },
+      { topup_id: row.id, step: gmail?.email ? 'Correo Gmail encontrado' : 'Correo Gmail no encontrado', detail: validation.gmail as never },
+      { topup_id: row.id, step: 'Pago comparado', detail: validation as never },
+    ]);
 
     let autoApproved = false;
-    if (autoApprove && codeRow) {
-      // Consume el código (evita reutilizarlo con otro comprobante).
-      const { data: usedCode } = await supabaseAdmin
-        .from('topup_codes')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', codeRow.id)
-        .is('used_at', null)
-        .select('id')
-        .maybeSingle();
-      if (usedCode) {
-        try {
-          const { reviewTopupById } = await import('@/lib/topup-review.server');
-          const result = await reviewTopupById({
-            topupId: row.id,
-            approve: true,
-            reason: `Aprobada automáticamente por la IA (${Math.round(ai.confidence * 100)}% de confianza, código ${noteCode}).`,
-          });
-          autoApproved = result.approved;
-          if (autoApproved) {
-            await supabaseAdmin
-              .from('topup_requests')
-              .update({ auto_approved: true, auto_source: 'ai' })
-              .eq('id', row.id);
-          }
-        } catch (e) {
-          console.error('[topup-auto-approve]', e);
+    if (autoApprove) {
+      if (codeRow && codeValid) {
+        await supabaseAdmin
+          .from('topup_codes')
+          .update({ used_at: new Date().toISOString() })
+          .eq('id', codeRow.id)
+          .is('used_at', null);
+      }
+      try {
+        const { reviewTopupById } = await import('@/lib/topup-review.server');
+        const result = await reviewTopupById({
+          topupId: row.id,
+          approve: true,
+          reason: `Aprobado automáticamente: transferencia confirmada en Gmail (correo ${gmail?.email?.messageId}).`,
+        });
+        autoApproved = result.approved;
+        if (autoApproved) {
+          await supabaseAdmin
+            .from('topup_requests')
+            .update({ auto_approved: true, auto_source: 'gmail', payment_status: 'payment_approved' })
+            .eq('id', row.id);
+          await supabaseAdmin
+            .from('payment_audit')
+            .insert({ topup_id: row.id, step: 'Pago aprobado', detail: { source: 'gmail', gmail: gmail?.email?.messageId } as never });
         }
+      } catch (e) {
+        console.error('[topup-auto-approve]', e);
       }
     }
 
