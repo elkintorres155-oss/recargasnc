@@ -36,12 +36,18 @@ export async function reviewTopupById(params: {
       .from('topup_requests')
       .update({
         status: 'rejected',
+        payment_status: 'payment_rejected',
         review_reason: reason || 'Rechazada por el administrador.',
         reviewed_by: reviewerId,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', req.id)
       .eq('status', 'pending');
+    await supabaseAdmin.from('payment_audit').insert({
+      topup_id: req.id,
+      step: 'Pago rechazado',
+      detail: { reviewerId: reviewerId ?? null, reason } as never,
+    });
     return { ok: true, approved: false, alreadyProcessed: false, message: 'Recarga rechazada.' };
   }
 
@@ -49,6 +55,7 @@ export async function reviewTopupById(params: {
     .from('topup_requests')
     .update({
       status: 'approved',
+      payment_status: 'payment_approved',
       review_reason: reason,
       reviewed_by: reviewerId,
       reviewed_at: new Date().toISOString(),
@@ -77,5 +84,10 @@ export async function reviewTopupById(params: {
       .eq('id', req.id);
     throw new Error(txError.message);
   }
+  await supabaseAdmin.from('payment_audit').insert({
+    topup_id: req.id,
+    step: 'Pago aprobado · saldo acreditado',
+    detail: { reviewerId: reviewerId ?? null, reason } as never,
+  });
   return { ok: true, approved: true, alreadyProcessed: false, message: 'Recarga aprobada.' };
 }

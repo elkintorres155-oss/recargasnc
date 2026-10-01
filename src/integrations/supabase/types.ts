@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          id: string
+          note: string
+          spent_on: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          id?: string
+          note?: string
+          spent_on?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          id?: string
+          note?: string
+          spent_on?: string
+        }
+        Relationships: []
+      }
       order_status_history: {
         Row: {
           actor: string
@@ -126,6 +162,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      payment_audit: {
+        Row: {
+          created_at: string
+          detail: Json | null
+          id: string
+          order_id: string | null
+          step: string
+          topup_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          order_id?: string | null
+          step: string
+          topup_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          order_id?: string | null
+          step?: string
+          topup_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_audit_topup_id_fkey"
+            columns: ["topup_id"]
+            isOneToOne: false
+            referencedRelation: "topup_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_methods: {
         Row: {
@@ -561,12 +632,21 @@ export type Database = {
           amount_nio: number
           auto_approved: boolean
           auto_source: string
+          bank_reference: string | null
           created_at: string
+          currency: string
           external_tx_id: string | null
+          gmail_amount_nio: number | null
+          gmail_date: string | null
+          gmail_from: string | null
+          gmail_message_id: string | null
+          gmail_subject: string | null
           id: string
+          internal_reference: string | null
           method_code: string
           method_name: string
           note_code: string
+          payment_status: string
           receipt_path: string
           reference: string
           review_reason: string
@@ -575,6 +655,7 @@ export type Database = {
           status: Database["public"]["Enums"]["topup_status"]
           updated_at: string
           user_id: string
+          validation_result: Json | null
         }
         Insert: {
           ai_amount_nio?: number | null
@@ -588,12 +669,21 @@ export type Database = {
           amount_nio: number
           auto_approved?: boolean
           auto_source?: string
+          bank_reference?: string | null
           created_at?: string
+          currency?: string
           external_tx_id?: string | null
+          gmail_amount_nio?: number | null
+          gmail_date?: string | null
+          gmail_from?: string | null
+          gmail_message_id?: string | null
+          gmail_subject?: string | null
           id?: string
+          internal_reference?: string | null
           method_code?: string
           method_name?: string
           note_code?: string
+          payment_status?: string
           receipt_path?: string
           reference?: string
           review_reason?: string
@@ -602,6 +692,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topup_status"]
           updated_at?: string
           user_id: string
+          validation_result?: Json | null
         }
         Update: {
           ai_amount_nio?: number | null
@@ -615,12 +706,21 @@ export type Database = {
           amount_nio?: number
           auto_approved?: boolean
           auto_source?: string
+          bank_reference?: string | null
           created_at?: string
+          currency?: string
           external_tx_id?: string | null
+          gmail_amount_nio?: number | null
+          gmail_date?: string | null
+          gmail_from?: string | null
+          gmail_message_id?: string | null
+          gmail_subject?: string | null
           id?: string
+          internal_reference?: string | null
           method_code?: string
           method_name?: string
           note_code?: string
+          payment_status?: string
           receipt_path?: string
           reference?: string
           review_reason?: string
@@ -629,6 +729,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["topup_status"]
           updated_at?: string
           user_id?: string
+          validation_result?: Json | null
         }
         Relationships: []
       }

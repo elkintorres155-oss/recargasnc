@@ -22,6 +22,13 @@
       "when": 1789019249311,
       "tag": "0002_reseller_program",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790821534465,
+      "tag": "0003_gmail_payment_verification",
+      "breakpoints": true
     }
   ]
 }
