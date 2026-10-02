@@ -780,6 +780,8 @@ function AdminPage() {
         </section>
 
         {tab === "saldos" ? <AdminWallets /> : null}
+        {tab === "pagosrec" ? <AdminPayments /> : null}
+        {tab === "finanzas" ? <AdminFinances /> : null}
 
         {tab === "stock" ? <AdminStock /> : null}
 
