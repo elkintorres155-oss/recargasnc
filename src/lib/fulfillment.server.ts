@@ -173,14 +173,20 @@ export async function dispatchToProvider(input: {
   const serverId = (input.serverId || split?.[2] || '').trim();
 
   try {
-    const res = await signedRequest(orderPath, {
-      reference_id: input.orderId,
-      service_code: serviceCode,
-      product_type: 'topup',
-      quantity: 1,
-      user_id: userId,
-      ...(serverId ? { server_id: serverId } : {}),
-    });
+    const accountField = serviceCode.startsWith('FREE_FIRE_LATAM_')
+  ? 'userid'
+  : 'user_id';
+
+const orderPayload: Record<string, unknown> = {
+  reference_id: input.orderId,
+  service_code: serviceCode,
+  product_type: 'topup',
+  quantity: 1,
+  [accountField]: userId,
+  ...(serverId ? { server_id: serverId } : {}),
+};
+
+const res = await signedRequest(orderPath, orderPayload);
     const body = res.body as {
       data?: { order_id?: string; order_status?: string };
       order_id?: string;
