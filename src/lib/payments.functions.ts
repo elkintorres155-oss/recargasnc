@@ -52,7 +52,11 @@ export const adminPaymentAudit = createServerFn({ method: 'POST' })
       .eq('topup_id', data.topupId)
       .order('created_at');
     if (error) throw new Error(error.message);
-    return (rows ?? []) as Array<{ step: string; detail: unknown; created_at: string }>;
+    return (rows ?? []).map((r: { step: string; detail: unknown; created_at: string }) => ({
+      step: r.step,
+      detail: JSON.stringify(r.detail ?? null),
+      created_at: r.created_at,
+    }));
   });
 
 export const adminFinances = createServerFn({ method: 'GET' })
