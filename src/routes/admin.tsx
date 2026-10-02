@@ -8,6 +8,7 @@ import { ProviderCatalog } from "@/components/store/ProviderCatalog";
 import { AdminStock } from "@/components/store/AdminStock";
 import { AdminRaffle } from "@/components/store/AdminRaffle";
 import { AdminResellers } from "@/components/store/AdminResellers";
+import { AdminFinances, AdminPayments } from "@/components/store/AdminPayments";
 import { defaultSettings, formatC, slugify, useStore, type Bank } from "@/lib/store-state";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
@@ -40,6 +41,8 @@ const TABS = [
   { id: "pagos", label: "🏦 Métodos de pago" },
   { id: "catalogo", label: "🎮 Catálogo y precios" },
   { id: "saldos", label: "💰 Recargas de saldo" },
+  { id: "pagosrec", label: "🧾 Pagos" },
+  { id: "finanzas", label: "📊 Finanzas" },
   { id: "stock", label: "🎬 Stock de cuentas" },
   { id: "ruleta", label: "🎡 Ruleta semanal" },
   { id: "revendedores", label: "🤝 Revendedores" },
@@ -777,6 +780,8 @@ function AdminPage() {
         </section>
 
         {tab === "saldos" ? <AdminWallets /> : null}
+        {tab === "pagosrec" ? <AdminPayments /> : null}
+        {tab === "finanzas" ? <AdminFinances /> : null}
 
         {tab === "stock" ? <AdminStock /> : null}
 

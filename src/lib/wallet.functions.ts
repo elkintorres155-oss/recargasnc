@@ -289,6 +289,41 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
       amountMismatch,
     };
 
+    const baseNotes = [
+      amountMismatch
+        ? `Monto ajustado al comprobante: el cliente declaró C$ ${data.amountNio} y se acreditarán C$ ${effectiveAmount}.`
+        : '',
+      !codeValid && noteCode ? 'El código de nota venció o ya fue usado.' : '',
+      codeValid && ai.noteCode && !codeMatch
+        ? `El código leído (${ai.noteCode}) no coincide con el generado (${noteCode}).`
+        : '',
+      ai.notes,
+    ];
+
+    const { data: row, error } = await supabaseAdmin
+      .from('topup_requests')
+      .insert({
+        user_id: userId,
+        method_code: data.method,
+        method_name: data.methodName || data.method.toUpperCase(),
+        amount_nio: effectiveAmount,
+        reference: data.reference.trim(),
+        receipt_path: receiptPath,
+        status: 'pending' as const,
+        note_code: noteCode,
+        ai_note_code: ai.noteCode,
+        ai_reference: ai.reference,
+        ai_amount_nio: ai.amount,
+        ai_bank: ai.bank,
+        ai_date: ai.date,
+        ai_confidence: ai.confidence,
+        ai_verdict: ai.verdict,
+        ai_notes: baseNotes.filter(Boolean).join(' ').trim(),
+      })
+      .select('id, status, amount_nio')
+      .single();
+    if (error) throw new Error(error.message);
+
     await supabaseAdmin
       .from('topup_requests')
       .update({
@@ -302,6 +337,7 @@ export const createTopupRequest = createServerFn({ method: 'POST' })
         gmail_date: gmail?.email?.date ?? null,
         validation_result: validation as never,
         ai_notes: [
+          ...baseNotes,
           refReused ? '⚠️ Posible reutilización: esta referencia bancaria ya está en otro pago.' : '',
           gmail ? gmail.notes.join(' ') : 'Gmail no configurado: requiere revisión manual.',
         ]
