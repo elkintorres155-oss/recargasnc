@@ -60,10 +60,12 @@ async function request(
     Accept: 'application/json',
   };
 
-  // Si hay relay/proxy con IP fija (TOPUP_PROXY_URL), salimos por ahí:
+  // Si hay relay/proxy con IP fija, salimos por ahí:
   // GamerHub exige lista blanca de IP y las IPs de salida del hosting varían.
-  const proxyUrl = process.env['TOPUP_PROXY_URL'];
-  const proxySecret = process.env['TOPUP_PROXY_SECRET'];
+  // GamerHub usa su propio relay (GAMERHUB_PROXY_URL, puerto 8787); el relay
+  // principal (TOPUP_PROXY_URL, puerto 8788) es solo de FlashTopUp.
+  const proxyUrl = process.env['GAMERHUB_PROXY_URL'] || process.env['TOPUP_PROXY_URL'];
+  const proxySecret = process.env['GAMERHUB_PROXY_SECRET'] || process.env['TOPUP_PROXY_SECRET'];
   if (proxyUrl) {
     const base = proxyUrl.replace(/\/$/, '');
     const relayHeaders = {
