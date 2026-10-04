@@ -91,3 +91,47 @@ export async function reviewTopupById(params: {
   });
   return { ok: true, approved: true, alreadyProcessed: false, message: 'Recarga aprobada.' };
 }
+
+/**
+ * Auto-aprobación por tiempo: si una recarga sigue pendiente (el admin no respondió)
+ * pasados 2 minutos y la IA tiene confianza >= 90% sin veredicto de rechazo,
+ * se acredita el saldo automáticamente.
+ */
+export const AUTO_APPROVE_DELAY_MS = 2 * 60 * 1000;
+export const AUTO_APPROVE_MIN_CONFIDENCE = 0.9;
+
+export async function autoApproveStaleTopups(userId?: string): Promise<number> {
+  try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const cutoff = new Date(Date.now() - AUTO_APPROVE_DELAY_MS).toISOString();
+    let q = supabaseAdmin
+      .from('topup_requests')
+      .select('id, ai_verdict')
+      .eq('status', 'pending')
+      .gte('ai_confidence', AUTO_APPROVE_MIN_CONFIDENCE)
+      .lte('created_at', cutoff)
+      .limit(20);
+    if (userId) q = q.eq('user_id', userId);
+    const { data } = await q;
+    let count = 0;
+    for (const r of data ?? []) {
+      if (r.ai_verdict === 'rejected') continue;
+      const res = await reviewTopupById({
+        topupId: r.id,
+        approve: true,
+        reason: 'Aprobada automáticamente: IA ≥90% y sin respuesta del admin en 2 minutos.',
+      });
+      if (res.approved) {
+        count++;
+        await supabaseAdmin
+          .from('topup_requests')
+          .update({ auto_approved: true })
+          .eq('id', r.id);
+      }
+    }
+    return count;
+  } catch (e) {
+    console.error('[auto-approve]', e);
+    return 0;
+  }
+}
