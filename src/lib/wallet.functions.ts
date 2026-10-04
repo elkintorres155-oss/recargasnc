@@ -19,6 +19,8 @@ export const getMyWallet = createServerFn({ method: 'GET' })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const { autoApproveStaleTopups } = await import('@/lib/topup-review.server');
+    await autoApproveStaleTopups(userId);
     const { data, error } = await supabase
       .from('wallets')
       .select('balance_nio, total_topped_up_nio, total_spent_nio')
@@ -49,6 +51,8 @@ export const getMyTransactions = createServerFn({ method: 'GET' })
 export const getMyTopups = createServerFn({ method: 'GET' })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { autoApproveStaleTopups } = await import('@/lib/topup-review.server');
+    await autoApproveStaleTopups(context.userId);
     const { data, error } = await context.supabase
       .from('topup_requests')
       .select('id, method_name, method_code, amount_nio, reference, status, review_reason, created_at')
@@ -430,6 +434,8 @@ export const adminListTopups = createServerFn({ method: 'GET' })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    const { autoApproveStaleTopups } = await import('@/lib/topup-review.server');
+    await autoApproveStaleTopups();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data, error } = await supabaseAdmin
       .from('topup_requests')
