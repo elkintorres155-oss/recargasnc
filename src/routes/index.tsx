@@ -47,10 +47,7 @@ function Index() {
                 🎁
               </span>
               <div className="flex-1">
-                <p className="text-sm font-bold">
-                  ✨ ¡Cada recarga participa en el sorteo diario!
-                </p>
-                <p className="text-sm text-muted-foreground">{settings.promoText}</p>
+                <p className="text-sm font-semibold text-muted-foreground">{settings.promoText}</p>
               </div>
               <button
                 type="button"
