@@ -264,6 +264,9 @@
 }
 
 @media (max-width: 767px) and (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  .reveal-stagger > * {
+    animation: none;
+  }
   .product-card.mobile-card-visible {
     animation: mobile-card-arrive 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
