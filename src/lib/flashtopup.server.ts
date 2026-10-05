@@ -105,7 +105,7 @@ async function sendThroughProxyOrDirect(
 }
 
 /** Lee el interruptor de modo pruebas guardado en la configuración de la tienda. */
-async function isSandboxEnabled(): Promise<boolean> {
+export async function isSandboxEnabled(): Promise<boolean> {
   try {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data } = await supabaseAdmin
@@ -182,4 +182,20 @@ export async function signedRequest(
   const url = `${creds.baseUrl}${path}`;
   const canonicalPath = new URL(url).pathname;
   return doRequest('POST', url, canonicalPath, JSON.stringify(payload));
+}
+
+/**
+ * Comprueba si FlashTopUp REALMENTE está respondiendo en modo sandbox.
+ * No basta con enviar X-FT-Sandbox: se lee el campo `sandbox` de la respuesta.
+ */
+export async function probeSandboxActive(): Promise<{ requested: boolean; active: boolean | null }> {
+  const requested = await isSandboxEnabled();
+  try {
+    const res = await signedGet('/products', { per_page: 1 });
+    const b = res.body as { sandbox?: unknown; meta?: { sandbox?: unknown } } | null;
+    const flag = b?.sandbox ?? b?.meta?.sandbox;
+    return { requested, active: typeof flag === 'boolean' ? flag : null };
+  } catch {
+    return { requested, active: null };
+  }
 }

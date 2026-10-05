@@ -135,7 +135,7 @@ export async function dispatchToProvider(input: {
   if (input.provider === 'fzr') return dispatchToFzr(input);
   if (input.provider === 'wdg') return dispatchToWdg(input);
   if (input.provider === 'gamerhub') return dispatchToGamerHub(input);
-  const { getCredentials, signedRequest } = await import('./flashtopup.server');
+  const { getCredentials, signedRequest, isSandboxEnabled, probeSandboxActive } = await import('./flashtopup.server');
   const creds = getCredentials();
   const orderPath = process.env['TOPUP_PROVIDER_ORDER_PATH'];
 
@@ -171,6 +171,20 @@ export async function dispatchToProvider(input: {
   const split = rawPlayer.match(/^(.+?)\s*[|(]\s*([A-Za-z0-9._-]{1,64})\s*\)?$/);
   const userId = split ? split[1]!.trim() : rawPlayer;
   const serverId = (input.serverId || split?.[2] || '').trim();
+
+  // Modo pruebas: solo se envía si FlashTopUp confirma sandbox:true. Nunca caer a producción.
+  if (await isSandboxEnabled()) {
+    const probe = await probeSandboxActive();
+    if (probe.active !== true) {
+      console.warn('[flashtopup] sandbox requested but provider reports', probe);
+      return {
+        dispatched: false,
+        providerOrderId: null,
+        message:
+          'Modo pruebas activo, pero FlashTopUp responde sandbox: false. Pedido bloqueado para evitar una compra real.',
+      };
+    }
+  }
 
   try {
     const accountField = serviceCode.startsWith('FREE_FIRE_LATAM_')
