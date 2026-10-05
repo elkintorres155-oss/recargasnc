@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getGamerHubBalance, listGamerHubProducts, listProviderProducts, listProviderServices } from "@/lib/provider.functions";
+import { getFlashTopUpSandboxStatus, getGamerHubBalance, listGamerHubProducts, listProviderProducts, listProviderServices } from "@/lib/provider.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 const inputCls =
@@ -9,6 +9,7 @@ const inputCls =
 export function ProviderCatalog() {
   const getProducts = useServerFn(listProviderProducts);
   const getServices = useServerFn(listProviderServices);
+  const getSandbox = useServerFn(getFlashTopUpSandboxStatus);
   const getGhBalance = useServerFn(getGamerHubBalance);
   const getGhProducts = useServerFn(listGamerHubProducts);
   const [loading, setLoading] = useState(false);
@@ -52,11 +53,11 @@ export function ProviderCatalog() {
 
       <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
         <label className="text-xs font-semibold text-muted-foreground">
-          ID del producto (para servicios)
+          Código del producto (product_code)
           <input
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-            placeholder="ej. 12"
+            placeholder="ej. TOPUP_FREE_FIRE_LATAM"
             className={inputCls}
           />
         </label>
@@ -73,14 +74,25 @@ export function ProviderCatalog() {
           disabled={loading}
           onClick={() => {
             if (!productId.trim()) {
-              setError("Escribe el ID del producto primero.");
+              setError("Escribe el código del producto primero.");
               return;
             }
-            void run(() => getServices({ data: { productId: productId.trim() } }));
+            void run(() => getServices({ data: { productCode: productId.trim() } }));
           }}
           className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
         >
           Ver servicios
+        </button>
+      </div>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => run(() => getSandbox())}
+          className="rounded-full border border-primary/50 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
+        >
+          Comprobar modo pruebas
         </button>
       </div>
 

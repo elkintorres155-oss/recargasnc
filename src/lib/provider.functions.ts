@@ -19,7 +19,11 @@ export const listProviderProducts = createServerFn({ method: 'GET' })
 /** Servicios/denominaciones de un producto (solo administradores). */
 export const listProviderServices = createServerFn({ method: 'GET' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { productId?: string } | undefined) => input ?? {})
+  .inputValidator((input: { productCode?: string } | undefined) => {
+    const productCode = String(input?.productCode ?? '').trim();
+    if (!/^[A-Za-z0-9_.-]{1,80}$/.test(productCode)) throw new Error('Escribe el código del producto (ej. TOPUP_FREE_FIRE_LATAM).');
+    return { productCode };
+  })
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc('has_role', {
       _user_id: context.userId,
@@ -28,7 +32,7 @@ export const listProviderServices = createServerFn({ method: 'GET' })
     if (!isAdmin) throw new Error('Solo administradores');
 
     const { signedGet } = await import('./flashtopup.server');
-    const res = await signedGet('/services', { product_id: data.productId });
+    const res = await signedGet('/services', { product_code: data.productCode });
     return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
   });
 
@@ -316,4 +320,15 @@ export const listGamerHubProducts = createServerFn({ method: 'GET' })
     const { gamerHubProducts } = await import('./gamerhub.server');
     const res = await gamerHubProducts();
     return { ok: res.ok, status: res.status, json: JSON.stringify(res.body ?? null) };
+  });
+
+/** Estado real del modo sandbox de FlashTopUp (solo administradores). */
+export const getFlashTopUpSandboxStatus = createServerFn({ method: 'GET' })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+    if (!isAdmin) throw new Error('Solo administradores');
+    const { probeSandboxActive } = await import('./flashtopup.server');
+    const r = await probeSandboxActive();
+    return { ok: true, status: 200, json: JSON.stringify(r) };
   });
