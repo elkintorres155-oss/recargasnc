@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Product } from "./data";
 import { formatC, useStore } from "@/lib/store-state";
@@ -7,11 +7,29 @@ import { packPrice, type PriceTier } from "@/lib/pricing";
 
 function ProductCard({ item, tier }: { item: Product; tier: PriceTier }) {
   const min = Math.min(...item.packs.map((p) => packPrice(p, tier)));
+  const cardRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card || !window.matchMedia("(max-width: 767px) and (pointer: coarse) and (prefers-reduced-motion: no-preference)").matches) return;
+    if (!("IntersectionObserver" in window)) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        card.classList.add("mobile-card-visible");
+        observer.disconnect();
+      }
+    }, { threshold: 0.2 });
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <Link
+      ref={cardRef}
       to="/producto/$id"
       params={{ id: item.id }}
-      className="group relative block overflow-hidden rounded-2xl surface-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:glow-ring"
+      className="product-card group relative block overflow-hidden rounded-2xl surface-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:glow-ring active:scale-[0.97]"
     >
       <div className="card-shine relative aspect-square overflow-hidden">
         <img
@@ -20,7 +38,7 @@ function ProductCard({ item, tier }: { item: Product; tier: PriceTier }) {
           loading="lazy"
           width={640}
           height={640}
-          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-1"
+          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-1 group-active:scale-105"
         />
         {item.hot ? (
           <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">

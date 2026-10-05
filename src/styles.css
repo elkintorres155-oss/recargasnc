@@ -249,6 +249,38 @@
 .reveal-stagger > *:nth-child(10) { animation-delay: 0.3s; }
 .reveal-stagger > *:nth-child(n + 11) { animation-delay: 0.33s; }
 
+/* On touch screens, reveal products as they enter view rather than on page load. */
+@keyframes mobile-card-arrive {
+  from { opacity: 0.45; transform: translateY(22px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes mobile-image-arrive {
+  from { transform: scale(1.12); }
+  to { transform: scale(1); }
+}
+@keyframes mobile-banner-sheen {
+  0%, 65% { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+
+@media (max-width: 767px) and (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  .reveal-stagger > * {
+    animation: none;
+  }
+  .product-card.mobile-card-visible {
+    animation: mobile-card-arrive 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .product-card.mobile-card-visible img {
+    animation: mobile-image-arrive 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .product-card.mobile-card-visible .card-shine::after {
+    animation: shine-sweep 0.9s 0.25s ease-out both;
+  }
+  .card-shine:not(.product-card .card-shine)::after {
+    animation: mobile-banner-sheen 5s ease-in-out 1s infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
