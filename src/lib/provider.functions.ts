@@ -55,29 +55,44 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
     return { serviceCode, userId, serverId, validationCode, productId };
   })
   .handler(async ({ data }) => {
+    const dev = process.env.NODE_ENV !== 'production';
     // 1) GamerHub: POST /v1/verify con { product_code, payload: { input1 } }
     const gh = await import('./gamerhub.server');
-    if (gh.getGamerHubCredentials()) {
-      const productCode = gh.gamerHubProductCodeFor(data.productId, data.serviceCode);
-      if (productCode) {
-        try {
-          const res = await gh.gamerHubCheckId(productCode, data.userId);
-          if (res.ok) {
-            return {
-              ok: true,
-              valid: res.valid,
-              nickname: res.valid ? res.nickname : null,
-              region: res.valid ? res.region : null,
-              message: res.valid
-                ? res.nickname
-                  ? `Cuenta encontrada: ${res.nickname}${res.region ? ` (${res.region})` : ''}`
-                  : 'ID válido.'
-                : 'ID de jugador incorrecto. Revísalo e intenta de nuevo.',
-            };
-          }
-        } catch {
-          /* si GamerHub falla, seguimos con los otros proveedores */
+    const productCode = gh.gamerHubProductCodeFor(data.productId, data.serviceCode);
+    if (dev) console.info('[checkPlayerId] server', { productId: data.productId, serviceCode: data.serviceCode, gamerhubCode: productCode });
+    if (productCode && gh.getGamerHubCredentials()) {
+      try {
+        const res = await gh.gamerHubCheckId(productCode, data.userId);
+        if (dev) console.info('[checkPlayerId] gamerhub', res);
+        if (!res.ok) {
+          return {
+            ok: false,
+            valid: false,
+            nickname: null as string | null,
+            region: null as string | null,
+            message: 'No se pudo conectar con el proveedor. Intenta de nuevo en unos segundos.',
+          };
         }
+        return {
+          ok: true,
+          valid: res.valid,
+          nickname: res.valid ? res.nickname : null,
+          region: res.valid ? res.region : null,
+          message: res.valid
+            ? res.nickname
+              ? `Cuenta encontrada: ${res.nickname}${res.region ? ` (${res.region})` : ''}`
+              : 'ID válido.'
+            : 'ID de jugador incorrecto. Revísalo e intenta de nuevo.',
+        };
+      } catch (e) {
+        if (dev) console.error('[checkPlayerId] gamerhub error', e instanceof Error ? e.message : e);
+        return {
+          ok: false,
+          valid: false,
+          nickname: null as string | null,
+          region: null as string | null,
+          message: 'Error de conexión con el proveedor. Intenta de nuevo.',
+        };
       }
     }
 
