@@ -86,7 +86,11 @@ function ProductPage() {
   }, [profilePhone.data?.phone, phoneTouched]);
 
   const needsId = Boolean(base?.needsId);
-  const activeSku = (base?.packs.find((p) => p.id === packId) ?? base?.packs[0])?.sku ?? "";
+  const activePack = base?.packs.find((p) => p.id === packId) ?? base?.packs[0];
+  // Muchos paquetes no tienen SKU de proveedor: usamos el id del paquete como
+  // respaldo para que la verificación no se bloquee (antes se cortaba aquí).
+  const activeSku = activePack?.sku || activePack?.id || "";
+  const verifyProductId = base?.providerProductId || base?.id || "";
   const trimmedId = playerId.trim();
 
   // Verificación automática del ID: al escribir, muestra el nickname solo.
@@ -95,26 +99,40 @@ function ProductPage() {
     setNickname("");
     setCheckOk(null);
     setCheckMsg("");
-    if (trimmedId.length < 5 || !activeSku || session !== "signed-in") return;
+    if (trimmedId.length < 5) return;
+    if (session === "loading") return;
+    if (session !== "signed-in") {
+      setCheckMsg("Inicia sesión para verificar tu ID.");
+      return;
+    }
     let cancelled = false;
     setChecking(true);
     const t = setTimeout(async () => {
+      if (import.meta.env.DEV)
+        console.info("[checkPlayerId] enviando", { productId: verifyProductId, serviceCode: activeSku, userId: trimmedId });
       try {
         const res = await verifyId({
           data: {
             serviceCode: activeSku,
             userId: trimmedId,
-            productId: base?.providerProductId || base?.id || "",
+            productId: verifyProductId,
           },
         });
+        if (import.meta.env.DEV) console.info("[checkPlayerId] respuesta", res);
         if (cancelled) return;
+        if (!res.ok) {
+          setCheckOk(null);
+          setCheckMsg(res.message || "No se pudo conectar con el proveedor. Intenta de nuevo.");
+          return;
+        }
         setCheckOk(res.valid);
         setNickname(res.valid && res.nickname ? res.nickname : "");
-        setCheckMsg(res.valid ? "" : res.message);
+        setCheckMsg(res.valid ? (res.nickname ? "" : "ID válido.") : res.message);
       } catch (e) {
+        if (import.meta.env.DEV) console.error("[checkPlayerId] error", e);
         if (cancelled) return;
-        setCheckOk(false);
-        setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+        setCheckOk(null);
+        setCheckMsg(e instanceof Error ? `Error de conexión: ${e.message}` : "No se pudo verificar el ID.");
       } finally {
         if (!cancelled) setChecking(false);
       }
@@ -125,7 +143,7 @@ function ProductPage() {
       setChecking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmedId, activeSku, needsId, session]);
+  }, [trimmedId, activeSku, verifyProductId, needsId, session]);
 
 
 
@@ -290,7 +308,7 @@ function ProductPage() {
                 />
                 <button
                   type="button"
-                  disabled={checking || !trimmedId || !activeSku}
+                  disabled={checking || !trimmedId}
                   onClick={async () => {
                     setCheckMsg("");
                     setCheckOk(null);
@@ -306,15 +324,16 @@ function ProductPage() {
                         data: {
                           serviceCode: activeSku,
                           userId: trimmedId,
-                          productId: base?.providerProductId || base?.id || "",
+                          productId: verifyProductId,
                         },
                       });
-                      setCheckOk(res.valid);
+                      if (import.meta.env.DEV) console.info("[checkPlayerId] respuesta (manual)", res);
+                      setCheckOk(res.ok ? res.valid : null);
                       setNickname(res.valid && res.nickname ? res.nickname : "");
                       setCheckMsg(res.valid ? (res.nickname ? "" : "ID válido.") : res.message);
                     } catch (e) {
-                      setCheckOk(false);
-                      setCheckMsg(e instanceof Error ? e.message : "No se pudo verificar el ID.");
+                      setCheckOk(null);
+                      setCheckMsg(e instanceof Error ? `Error de conexión: ${e.message}` : "No se pudo verificar el ID.");
                     } finally {
                       setChecking(false);
                     }
