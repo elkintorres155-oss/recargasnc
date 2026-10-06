@@ -55,7 +55,7 @@ export const checkPlayerId = createServerFn({ method: 'POST' })
     return { serviceCode, userId, serverId, validationCode, productId };
   })
   .handler(async ({ data }) => {
-    const dev = process.env.NODE_ENV !== 'production';
+    const dev = process.env['NODE_ENV'] !== 'production';
     // 1) GamerHub: POST /v1/verify con { product_code, payload: { input1 } }
     const gh = await import('./gamerhub.server');
     const productCode = gh.gamerHubProductCodeFor(data.productId, data.serviceCode);
