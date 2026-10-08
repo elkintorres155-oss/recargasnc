@@ -149,21 +149,27 @@ async function request(
 
     // IMPORTANTE:
     // El relay actual tiene un endpoint /verify específico.
-    if (path === '/verify' && method === 'POST') {
-      const verifyRes = await fetch(`${proxyBase}/verify`, {
-        method: 'POST',
-        headers: relayHeaders,
-        body: rawBody,
-      });
+ if (
+  (path === '/verify' || path === '/orders') &&
+  method === 'POST'
+) {
+  const relayPath =
+    path === '/verify' ? '/verify' : '/order';
 
-      const body = await parseResponseBody(verifyRes);
+  const relayRes = await fetch(`${proxyBase}${relayPath}`, {
+    method: 'POST',
+    headers: relayHeaders,
+    body: rawBody,
+  });
 
-      return {
-        ok: verifyRes.ok,
-        status: verifyRes.status,
-        body,
-      };
-    }
+  const body = await parseResponseBody(relayRes);
+
+  return {
+    ok: relayRes.ok,
+    status: relayRes.status,
+    body,
+  };
+ }
 
     // Para GET y otros POST usamos el envelope del relay.
     const envelope = JSON.stringify({
