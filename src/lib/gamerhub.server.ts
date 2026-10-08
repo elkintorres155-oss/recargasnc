@@ -146,30 +146,33 @@ async function request(
     if (proxySecret) {
       relayHeaders['X-Relay-Secret'] = proxySecret;
     }
+        if (proxySecret) {
+      relayHeaders['X-Relay-Secret'] = proxySecret;
+    }
 
     // IMPORTANTE:
-    // El relay actual tiene un endpoint /verify específico.
- if (
-  (path === '/verify' || path === '/orders') &&
-  method === 'POST'
-) {
-  const relayPath =
-    path === '/verify' ? '/verify' : '/order';
+    // El relay tiene endpoints directos para /verify y /order.
+    if (
+      (path === '/verify' || path === '/orders') &&
+      method === 'POST'
+    ) {
+      const relayPath =
+        path === '/verify' ? '/verify' : '/order';
 
-  const relayRes = await fetch(`${proxyBase}${relayPath}`, {
-    method: 'POST',
-    headers: relayHeaders,
-    body: rawBody,
-  });
+      const relayRes = await fetch(`${proxyBase}${relayPath}`, {
+        method: 'POST',
+        headers: relayHeaders,
+        body: rawBody,
+      });
 
-  const body = await parseResponseBody(relayRes);
+      const body = await parseResponseBody(relayRes);
 
-  return {
-    ok: relayRes.ok,
-    status: relayRes.status,
-    body,
-  };
- }
+      return {
+        ok: relayRes.ok,
+        status: relayRes.status,
+        body,
+      };
+    }
 
     // Para GET y otros POST usamos el envelope del relay.
     const envelope = JSON.stringify({
