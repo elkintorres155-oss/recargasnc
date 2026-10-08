@@ -66,12 +66,56 @@ async function request(
   // principal (TOPUP_PROXY_URL, puerto 8788) es solo de FlashTopUp.
   const proxyUrl = process.env['GAMERHUB_PROXY_URL'] || process.env['TOPUP_PROXY_URL'];
   const proxySecret = process.env['GAMERHUB_PROXY_SECRET'] || process.env['TOPUP_PROXY_SECRET'];
-  if (proxyUrl) {
+    if (proxyUrl) {
     const base = proxyUrl.replace(/\/$/, '');
     const relayHeaders = {
       'Content-Type': 'application/json',
       ...(proxySecret ? { 'X-Relay-Secret': proxySecret } : {}),
     };
+
+    // 1) Verificación: llama directo a GAMERHUB_PROXY_URL + "/verify" con el JSON canónico
+    if (path === '/verify' && method === 'POST') {
+      const res = await fetch(`${base}/verify`, {
+        method: 'POST',
+        headers: relayHeaders,
+        body: rawBody,
+      });
+      const text = await res.text();
+      let parsed: unknown = text;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        /* respuesta no JSON */
+      }
+      return { ok: res.ok, status: res.status, body: parsed };
+    }
+
+    // 2) Resto de endpoints: sobre genérico
+    const envelope = JSON.stringify({
+      url,
+      method,
+      headers,
+      ...(method === 'POST' ? { body: rawBody } : {}),
+    });
+    const relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
+    const relayText = await relayRes.text();
+    let relayJson: { status?: number; body?: string } = {};
+    try {
+      relayJson = JSON.parse(relayText);
+    } catch {
+      /* relay no devolvió JSON */
+    }
+    const status = Number(relayJson.status ?? relayRes.status);
+    const text = typeof relayJson.body === 'string' ? relayJson.body : relayText;
+    let parsed: unknown = text;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      /* respuesta no JSON */
+    }
+    return { ok: status >= 200 && status < 300, status, body: parsed };
+  }
+
     // Verificación de ID: el relay expone POST /verify y espera el JSON de
     // GamerHub TAL CUAL ({ product_code, payload: { input1 } }); él firma y
     // reenvía. No se envía sobre ni firma: el body va exacto.
