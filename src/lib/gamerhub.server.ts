@@ -116,35 +116,6 @@ async function request(
     return { ok: status >= 200 && status < 300, status, body: parsed };
   }
 
-    // Verificación de ID: el relay expone POST /verify y espera el JSON de
-    // GamerHub TAL CUAL ({ product_code, payload: { input1 } }); él firma y
-    // reenvía. No se envía sobre ni firma: el body va exacto.
-    // Resto de llamadas: sobre genérico { url, method, headers, body } en la raíz.
-    const envelope = JSON.stringify({
-      url,
-      method,
-      headers,
-      ...(method === 'POST' ? { body: rawBody } : {}),
-    });
-    const relayRes = await fetch(base, { method: 'POST', headers: relayHeaders, body: envelope });
-    const relayText = await relayRes.text();
-    let relayJson: { status?: number; body?: string } = {};
-    try {
-      relayJson = JSON.parse(relayText);
-    } catch {
-      /* relay no devolvió JSON */
-    }
-    const status = Number(relayJson.status ?? relayRes.status);
-    const text = typeof relayJson.body === 'string' ? relayJson.body : relayText;
-    let parsed: unknown = text;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      /* respuesta no JSON */
-    }
-    return { ok: status >= 200 && status < 300, status, body: parsed };
-  }
-
   const res = await fetch(url, {
     method,
     headers,
