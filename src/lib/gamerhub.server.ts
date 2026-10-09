@@ -155,16 +155,6 @@ async function request(
     if (proxySecret) {
       relayHeaders['X-Relay-Secret'] = proxySecret;
     }
-
-    /*
-     * El relay tiene endpoints directos para:
-     *
-     * POST /verify
-     * POST /order
-     *
-     * Check ID usa /verify.
-     * Los pedidos usan /order.
-     */
     if (
       (path === '/verify' || path === '/orders') &&
       method === 'POST'
