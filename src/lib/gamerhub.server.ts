@@ -1,4 +1,5 @@
-// Cliente server-only de GamerHub.
+
+ // Cliente server-only de GamerHub.
 // Mantiene la misma interfaz usada por provider.functions.ts.
 
 type Creds = {
@@ -143,7 +144,8 @@ async function request(
     process.env['TOPUP_PROXY_SECRET'];
 
   /*
-   * Si existe proxy, usamos el relay de GamerHub.
+   * Si existe proxy, usamos el relay.
+   * El relay recibe un envelope en su endpoint principal.
    */
   if (proxyUrl) {
     const proxyBase = proxyUrl.replace(/\/$/, '');
@@ -155,38 +157,7 @@ async function request(
     if (proxySecret) {
       relayHeaders['X-Relay-Secret'] = proxySecret;
     }
-    if (
-      (path === '/verify' || path === '/orders') &&
-      method === 'POST'
-    ) {
-      const relayPath =
-        path === '/verify'
-          ? '/verify'
-          : '/order';
 
-      const relayRes = await fetch(
-        `${proxyBase}${relayPath}`,
-        {
-          method: 'POST',
-          headers: relayHeaders,
-          body: rawBody,
-        },
-      );
-
-      const body =
-        await parseResponseBody(relayRes);
-
-      return {
-        ok: relayRes.ok,
-        status: relayRes.status,
-        body,
-      };
-    }
-
-    /*
-     * Para GET y otros POST usamos el envelope
-     * que espera el relay.
-     */
     const envelope = JSON.stringify({
       url,
       method,
@@ -196,22 +167,73 @@ async function request(
         : {}),
     });
 
-    const relayRes = await fetch(
-      proxyBase,
-      {
-        method: 'POST',
-        headers: relayHeaders,
-        body: envelope,
-      },
-    );
+    const relayRes = await fetch(proxyBase, {
+      method: 'POST',
+      headers: relayHeaders,
+      body: envelope,
+    });
 
-    const body =
+    const relayBody =
       await parseResponseBody(relayRes);
 
+    /*
+     * Si falla el propio relay, devolvemos ese error.
+     */
+    if (
+      !relayRes.ok ||
+      !relayBody ||
+      typeof relayBody !== 'object' ||
+      Array.isArray(relayBody)
+    ) {
+      return {
+        ok: false,
+        status: relayRes.status,
+        body: relayBody,
+      };
+    }
+
+    /*
+     * El relay puede responder HTTP 200 aunque
+     * la API de GamerHub haya devuelto un error.
+     */
+    const wrapper = relayBody as {
+      status?: number;
+      body?: unknown;
+      error?: string;
+    };
+
+    let body = wrapper.body;
+
+    /*
+     * El contenido original de GamerHub puede venir
+     * como texto JSON dentro del wrapper del relay.
+     */
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // Si no es JSON, conservamos el texto original.
+      }
+    }
+
+    const upstreamStatus =
+      typeof wrapper.status === 'number'
+        ? wrapper.status
+        : relayRes.status;
+
+    const upstreamOk =
+      upstreamStatus >= 200 &&
+      upstreamStatus < 300;
+
     return {
-      ok: relayRes.ok,
-      status: relayRes.status,
-      body,
+      ok:
+        relayRes.ok &&
+        upstreamOk &&
+        !wrapper.error,
+      status: upstreamStatus,
+      body: wrapper.error
+        ? { error: wrapper.error }
+        : body,
     };
   }
 
@@ -226,8 +248,7 @@ async function request(
       : {}),
   });
 
-  const body =
-    await parseResponseBody(res);
+  const body = await parseResponseBody(res);
 
   return {
     ok: res.ok,
@@ -364,9 +385,7 @@ export async function gamerHubCheckId(
         obj.success ??
         obj.ok;
 
-      if (
-        typeof possibleValid === 'boolean'
-      ) {
+      if (typeof possibleValid === 'boolean') {
         valid = possibleValid;
       }
     }
@@ -385,8 +404,7 @@ export async function gamerHubCheckId(
         typeof possibleName === 'string' &&
         possibleName.trim()
       ) {
-        nickname =
-          possibleName.trim();
+        nickname = possibleName.trim();
       }
     }
 
@@ -401,8 +419,7 @@ export async function gamerHubCheckId(
         typeof possibleRegion === 'string' &&
         possibleRegion.trim()
       ) {
-        region =
-          possibleRegion.trim();
+        region = possibleRegion.trim();
       }
     }
   }
@@ -412,10 +429,7 @@ export async function gamerHubCheckId(
       .filter(
         (
           value,
-        ): value is Record<
-          string,
-          unknown
-        > =>
+        ): value is Record<string, unknown> =>
           Boolean(
             value &&
             typeof value === 'object',
@@ -423,20 +437,14 @@ export async function gamerHubCheckId(
       )
       .map((obj) => obj.status)
       .filter(
-        (
-          value,
-        ): value is string =>
+        (value): value is string =>
           typeof value === 'string',
       )
-      .map((value) =>
-        value.toLowerCase(),
-      );
+      .map((value) => value.toLowerCase());
 
     if (
       statusTexts.some((value) =>
-        /verified|valid|ok|success/.test(
-          value,
-        ),
+        /verified|valid|ok|success/.test(value),
       )
     ) {
       valid = true;
@@ -450,12 +458,8 @@ export async function gamerHubCheckId(
   return {
     ok: res.ok,
     valid: Boolean(valid),
-    nickname: valid
-      ? nickname
-      : null,
-    region: valid
-      ? region
-      : null,
+    nickname: valid ? nickname : null,
+    region: valid ? region : null,
     status: res.status,
   };
 }
@@ -478,4 +482,4 @@ export async function gamerHubOrder(input: {
         : {}),
     },
   });
-  }
+}
