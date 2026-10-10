@@ -143,6 +143,47 @@ async function request(
     process.env['GAMERHUB_PROXY_SECRET'] ||
     process.env['TOPUP_PROXY_SECRET'];
 
+   // Verificación: usar exclusivamente el relay de GamerHub.
+  if (path === '/verify' && method === 'POST') {
+    const gamerHubProxyUrl =
+      process.env['GAMERHUB_PROXY_URL'];
+
+    if (!gamerHubProxyUrl) {
+      return {
+        ok: false,
+        status: 500,
+        body: {
+          error: 'GAMERHUB_PROXY_URL no configurado',
+        },
+      };
+    }
+
+    const relayHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (proxySecret) {
+      relayHeaders['X-Relay-Secret'] = proxySecret;
+    }
+
+    const verifyRes = await fetch(
+      `${gamerHubProxyUrl.replace(/\/$/, '')}/verify`,
+      {
+        method: 'POST',
+        headers: relayHeaders,
+        body: rawBody,
+      },
+    );
+
+    const verifyBody =
+      await parseResponseBody(verifyRes);
+
+    return {
+      ok: verifyRes.ok,
+      status: verifyRes.status,
+      body: verifyBody,
+    };
+  }
   /*
    * Si existe proxy, usamos el relay.
    * El relay recibe un envelope en su endpoint principal.
