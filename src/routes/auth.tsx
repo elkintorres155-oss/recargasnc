@@ -25,6 +25,10 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function isLovableHost(hostname: string) {
+  return /(^|\.)(lovable\.app|lovable\.dev|lovableproject\.com)$/.test(hostname);
+}
+
 const inputCls =
   "mt-1 w-full rounded-xl border border-border bg-card/70 px-4 py-3 text-sm outline-none focus:border-primary";
 
@@ -70,6 +74,19 @@ function AuthPage() {
     setBusy(true);
     setMsg("");
     try {
+      // Lovable's OAuth broker (/~oauth) only exists on Lovable hosting; elsewhere
+      // (e.g. Netlify) sign in with Google through Supabase directly.
+      if (!isLovableHost(window.location.hostname)) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}/mis-pedidos` },
+        });
+        if (error) {
+          setMsg("No se pudo iniciar sesión con Google. Intenta de nuevo.");
+          setBusy(false);
+        }
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
